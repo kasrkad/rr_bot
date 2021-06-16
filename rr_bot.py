@@ -8,8 +8,8 @@ import time
 url = 'https://hpsm.emias.mos.ru/sm/index.do'
 driver = webdriver.Chrome('/mnt/c/Tools/rr_bot/chromedriver.exe')
 driver.get(url)
-driver.find_element_by_id("LoginUsername").send_keys("MeleshenkovI")
-driver.find_element_by_id("LoginPassword").send_keys("Boradori4040")
+driver.find_element_by_id("LoginUsername").send_keys("username")
+driver.find_element_by_id("LoginPassword").send_keys("password")
 driver.find_element_by_id("loginBtn").click()
 time.sleep(5)
 driver.switch_to.frame(driver.find_element_by_tag_name('iframe'))
