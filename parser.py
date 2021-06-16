@@ -19,5 +19,8 @@ def parse_hpsm(file):
                 data_dict = json.loads(line[6:len(line)-1])
                 data_dict = data_dict['model']['instance']
                 for row in data_dict:
+                    if row['record_id'].startswith('C') or row['record_id'].startswith('T'):
+                        data_dict.pop(data_dict.index(row))
+                        continue
                     print (f'Код-заявки: {row["record_id"]}, Статус заявки: {row["status"]}, Группа:{row["group"]}, Тип заявки: {row["itemType"]}, Назначено: {row["assignee"]}, Приоритет: {row["priority"]}, Истечение срока: {row["em_next_ola_breach"]}')
                 print(f'Общее кол-во заявок: {len(data_dict)}')
