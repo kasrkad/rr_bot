@@ -6,7 +6,7 @@ import time
 # from bot_config import AUTH
 # import bot_config
 url = 'https://hpsm.emias.mos.ru/sm/index.do'
-driver = webdriver.Chrome('/mnt/c/Tools/rr_bot/chromedriver.exe')
+driver = webdriver.Chrome('path_to_chrome_driver')
 driver.get(url)
 driver.find_element_by_id("LoginUsername").send_keys("username")
 driver.find_element_by_id("LoginPassword").send_keys("password")
@@ -20,4 +20,3 @@ with open ('html', 'w') as f:
 
 
 
-# result = driver.execute_script("https://hpsm.emias.mos.ru/sm/js/9.63.0006/sm.recordlist.js")
