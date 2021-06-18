@@ -7,7 +7,12 @@ replace_list = [
     '_{_VALUE_}_4',
     '_{_VALUE_}_AS203',
     '_{_VALUE_}_In work',
-    '_{_VALUE_}_AS346'
+    '_{_VALUE_}_AS346',
+    '_{_VALUE_}_Assigneed',
+    '_{_VALUE_}_Planning',
+    '_{_VALUE_}_cm3r',
+    '_{_VALUE_}_Approval'
+
 ]
 
 def write_json(jobs_list,actual_filename,log_filename):
@@ -18,7 +23,7 @@ def write_json(jobs_list,actual_filename,log_filename):
         monitor_file.write(line_for_json)
 
     with open (log_filename,'a', encoding='utf8') as log_file:
-        log_file.write(line_for_json)
+        log_file.write(line_for_json+"\n")
 
 
 def parse_hpsm(file):
@@ -38,17 +43,15 @@ def parse_hpsm(file):
                 
                 for row in data_dict:
                     if row['record_id'].startswith(('T','C')):
-                        others_list.append({'record_id':row["record_id"], 'status': row["status"], 'group':row["group"], 'itemType': row["itemType"],
-                        'assignee': row["assignee"], 'priotity': row["priority"], 'sla': row["em_next_ola_breach"], 'check_time':f'{time}'})
+                        others_list.append({'check_time':f'{time}' ,'record_id':row["record_id"], 'status': row["status"], 'group':row["group"], 'itemType': row["itemType"],
+                        'assignee': row["assignee"], 'priotity': row["priority"], 'sla': row["em_next_ola_breach"]})
                     else:
                         print (f'Код-заявки: {row["record_id"]}, Статус заявки: {row["status"]}, Группа:{row["group"]}, Тип заявки: {row["itemType"]}, Назначено: {row["assignee"]}, Приоритет: {row["priority"]}, Истечение срока: {row["em_next_ola_breach"]}')
-                        monitor_list.append({'record_id':row["record_id"], 'status': row["status"], 'group':row["group"], 'itemType': row["itemType"],
-                        'assignee': row["assignee"], 'priotity': row["priority"], 'sla': row["em_next_ola_breach"], 'check_time':f'{time}'})    
+                        monitor_list.append({'check_time':f'{time}', 'record_id':row["record_id"], 'status': row["status"], 'group':row["group"], 'itemType': row["itemType"],
+                        'assignee': row["assignee"], 'priotity': row["priority"], 'sla': row["em_next_ola_breach"] })    
                    
                 print(f'Общее кол-во заявок: {len(monitor_list)} \nOбщее кол-во работ : {len(others_list)}')
     
-        write_json(monitor_list,'monitor_actual.json', f'monitor_log_for_{date}.json')
+        write_json(monitor_list, 'monitor_actual.json', f'monitor_log_for_{date}.json')
+        write_json(others_list, 'other_actual.json', f'other_log_for_{date}.json')
     
-        write_json(others_list,f'{date} other_actual.json',f'other_log_for_{date}.json')
-    
-parse_hpsm('html')

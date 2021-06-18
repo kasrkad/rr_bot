@@ -1,8 +1,8 @@
 #!/bin/python3
 
-url = 'SITE'
-USER_NAME = 'username'
+url = 'https://hpsm.emias.mos.ru/sm/index.do'
+USER_NAME = 'USERNAME'
 PASSWORD = 'PASSWORD'
-PATH_TO_DRIVER = 'driver_path'
-
-BOT_TOKEN = ''
+GECKOPASS = r'/path/to/geckodriver'
+BOT_TOKEN = 'TOKEN'
+CHECK_TIME = 300 #secs
