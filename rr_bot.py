@@ -20,8 +20,8 @@ def check_sla(filename):
 	   	line = line.replace("'",'"')
 	   	rr = json.loads(line)
 	   	if rr['status'] != 'В работе':
-	   		rr_bot.send_message(config.CHAT_ID, f"Заявка [{rr['record_id']}](https://hpsm.emias.mos.ru/sm/index.do?lang=) не взята в работу! Вызываем ответственных [Алесандра Баумана](tg://user?id=753785354) и [{duty['first_name']} {duty['last_name']}](tg://user?id={duty['t_id']})")
-	   		rr_bot.send_message(check_duty_eng('t_id'), f"Заявка [{rr['record_id']}](https://hpsm.emias.mos.ru/sm/index.do?lang=) не взята в работу!")
+	   		rr_bot.send_message(config.CHAT_ID, f"Заявка [{rr['record_id']}](https://hpsm.emias.mos.ru/sm/index.do?lang=) не взята в работу! Вызываем ответственных [Александра Баумана](tg://user?id=753785354) и [{duty['first_name']} {duty['last_name']}](tg://user?id={duty['t_id']})")
+	   		rr_bot.send_message(duty['t_id'], f"Заявка [{rr['record_id']}](https://hpsm.emias.mos.ru/sm/index.do?lang=) не взята в работу!")
 
 def Get_HPSM_table(url):
    with open ('./logs/work_log', 'a') as log:
