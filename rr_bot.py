@@ -1,5 +1,5 @@
 #!/bin/python3
-from os import write
+# from os 
 from selenium import webdriver
 import time
 import config
@@ -7,17 +7,24 @@ from parser import parse_hpsm
 import telebot
 import json
 
+def check_duty_eng():
+   with open ('duty.json', 'r', encoding='utf8') as duty_file:
+      duty_eng = json.load(duty_file)
+   return duty_eng
+
 def check_sla(filename):
-   rr_bot = telebot.TeleBot(config.BOT_TOKEN)
-   with open (filename, 'r') as rr_file:
+   rr_bot = telebot.TeleBot(config.BOT_TOKEN, parse_mode='MARKDOWN')
+   duty = check_duty_eng()
+   with open (f"./logs/{filename}", 'r') as rr_file:
 	   for line in rr_file.readlines():
 	   	line = line.replace("'",'"')
 	   	rr = json.loads(line)
 	   	if rr['status'] != 'В работе':
-	   		print(rr_bot.send_message(config.CHAT_ID, f"Алярм заявка {rr['record_id']} не взята в работу"))
+	   		rr_bot.send_message(config.CHAT_ID, f"Заявка [{rr['record_id']}](https://hpsm.emias.mos.ru/sm/index.do?lang=) не взята в работу! Вызываем ответственных [Алесандра Баумана](tg://user?id=753785354) и [{duty['first_name']} {duty['last_name']}](tg://user?id={duty['t_id']})")
+	   		rr_bot.send_message(check_duty_eng('t_id'), f"Заявка [{rr['record_id']}](https://hpsm.emias.mos.ru/sm/index.do?lang=) не взята в работу!")
 
 def Get_HPSM_table(url):
-   with open ('work_log', 'a') as log:
+   with open ('./logs/work_log', 'a') as log:
       log.write("Установка опций\n")
       options = webdriver.FirefoxOptions()
       options.add_argument('--headless')
