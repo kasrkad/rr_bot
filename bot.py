@@ -5,15 +5,11 @@ import config
 import json
 
 
-
 rr_bot = telebot.TeleBot(config.BOT_TOKEN, parse_mode='MARKDOWN')
-
-
 
 @rr_bot.message_handler(commands=['help'])
 def print_help(message):
 	rr_bot.reply_to(message,"Пока я умею /дежурю(Дежурю) - регистрация дежурного, /дежурный(Дежурный) - скажу кто сейчас дежурный ")
-
 
 @rr_bot.message_handler(commands=['дежурю','Дежурю'])
 def get_duty_id(message):
@@ -34,4 +30,10 @@ def who_duty_today(message):
 			duty_eng = json.load(duty_file)
 		rr_bot.reply_to(message,f"Сегодня дежурит [{duty_eng['first_name']} {duty_eng['last_name']}](tg://user?id={duty_eng['t_id']})")
 
-rr_bot.polling(none_stop=True, interval=0)
+if __name__=='__main__':
+
+	try:
+		rr_bot.polling(none_stop=True, interval=0)
+	except Exception as exc:
+		with open ('bot_exc.txt', 'a', encoding='utf8') as exc_file:
+			exc_file.write(str(exc))

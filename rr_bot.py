@@ -54,9 +54,13 @@ def Get_HPSM_table(url):
       driver.quit()
 
 if __name__ == '__main__':
-   while True:
-      Get_HPSM_table(config.url)
-      parse_hpsm('html')
-      check_sla('monitor_actual.json')
-      time.sleep(config.CHECK_TIME)
+   try:
+      while True:
+         Get_HPSM_table(config.url)
+         parse_hpsm('html')
+         check_sla('monitor_actual.json')
+         time.sleep(config.CHECK_TIME)
+   except Exception as exc:
+      with open('exc_parse.txt', 'a', encoding='utf8') as exc_file:
+         exc_file.write(str(exc_file))
 
