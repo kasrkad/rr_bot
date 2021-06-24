@@ -3,12 +3,18 @@
 import telebot
 import config
 import json
-from bot_functions import check_duty_eng
+from bot_functions import check_duty_eng, get_document
 
 rr_bot = telebot.TeleBot(config.BOT_TOKEN, parse_mode='MARKDOWN')
 
 global duty_eng
 duty_eng = check_duty_eng()
+
+@rr_bot.message_handler(commands=['скачай'])
+def download_document(message):
+    download_list = message.text.split(" ")
+    for doc in download_list[1:]:     
+        print(get_document(doc))
 
 @rr_bot.message_handler(commands=['help'])
 def print_help(message):

@@ -1,6 +1,7 @@
 #!/bin/python3
 import os
 import json
+import requests
 
 def check_duty_eng():
     if os.path.exists('duty.json'):
