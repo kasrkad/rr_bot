@@ -39,7 +39,7 @@ def who_duty_today(message):
 if __name__=='__main__':
 
 	try:
-		rr_bot.polling(none_stop=True, interval=0)
+		rr_bot.polling(none_stop=True, interval=0, timeout=20)
 	except Exception as exc:
 		with open ('bot_exc.txt', 'a', encoding='utf8') as exc_file:
 			exc_file.write(str(exc) + "\n")

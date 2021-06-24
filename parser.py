@@ -13,7 +13,8 @@ replace_list = [
     "_{_VALUE_}_Approval",
     "_{_VALUE_}_cm3t",
     "_{_VALUE_}_Запланировано",
-    "_{_VALUE_}_Assigneed"
+    "_{_VALUE_}_Assigneed",
+    "_{_VALUE_}_Выполняется"
 ]
 
 def write_json(jobs_list,actual_filename,log_filename):
