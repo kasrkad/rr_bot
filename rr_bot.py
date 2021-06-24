@@ -2,15 +2,12 @@
 # from os 
 from selenium import webdriver
 import time
-import config
-from parser import parse_hpsm
 import telebot
 import json
 
-def check_duty_eng():
-   with open ('duty.json', 'r', encoding='utf8') as duty_file:
-      duty_eng = json.load(duty_file)
-   return duty_eng
+from bot_functions import check_duty_eng
+from parser import parse_hpsm
+import config
 
 def check_sla(filename):
    rr_bot = telebot.TeleBot(config.BOT_TOKEN, parse_mode='MARKDOWN')
@@ -54,13 +51,14 @@ def Get_HPSM_table(url):
       driver.quit()
 
 if __name__ == '__main__':
-   try:
-      while True:
-         Get_HPSM_table(config.url)
-         parse_hpsm('html')
-         check_sla('monitor_actual.json')
-         time.sleep(config.CHECK_TIME)
-   except Exception as exc:
-      with open('exc_parse.txt', 'a', encoding='utf8') as exc_file:
-         exc_file.write(str(exc_file))
+    try:
+        while True:
+            Get_HPSM_table(config.url)
+            parse_hpsm('html')
+            check_sla('monitor_actual.json')
+            time.sleep(config.CHECK_TIME)
+    except Exception as exc:
+        print (exc)
+        with open('exc_parse.txt', 'a', encoding='utf8') as exc_file:
+            exc_file.write(str(exc_file))
 
