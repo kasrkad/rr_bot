@@ -34,7 +34,7 @@ def get_duty_id(message):
     with open ('duty.json','w',encoding='utf8') as duty_file:
         json.dump(duty_eng,duty_file, ensure_ascii=False)
 
-@rr_bot.message_handler(commands=['КтоДежурит','ктодежурит'])
+@rr_bot.message_handler(commands=['КтоДежурит','ктодежурит','ктоДежурит'])
 def who_duty_today(message):
     global duty_eng
     if duty_eng:
