@@ -1,5 +1,5 @@
 #!/bin/python3
-
+import os
 import telebot
 import config
 import json
@@ -13,14 +13,20 @@ duty_eng = check_duty_eng()
 @rr_bot.message_handler(commands=['скачай'])
 def download_document(message):
     download_list = message.text.split(" ")
-    for doc in download_list[1:]:     
-        print(get_document(doc))
+    for doc in download_list[1:]:
+        with open('./doc_download_log/log.txt', 'a', encoding='utf8') as doc_log:
+            doc_log.write(f"{doc} скачан пользователем {message.from_user.first_name} {message.from_user.last_name} - id {message.from_user.id}\n")
+        print(message.from_user.id)
+        get_document(doc,message.from_user.id)
+        document = open(f'./documents_output/{doc}.xml')
+        rr_bot.send_document(message.from_user.id, document)
+        os.remove(f'./documents_output/{doc}.xml')
 
 @rr_bot.message_handler(commands=['help'])
 def print_help(message):
-    rr_bot.reply_to(message,"Пока я умею /дежурю - регистрация дежурного, /дежурный - скажу кто сейчас дежурный ")
+    rr_bot.reply_to(message," Владею нюндзюцу:\n /help : выведу это сообщение,\n /дежурю или /дежурный : регистрирую как дежурного инженера,\n /ктоДежурит: укажу на дежурного инженера,\n /скачай docID : скачаю с ППАК документ и отправлю в личку.", parse_mode="MARKDOWN")
 
-@rr_bot.message_handler(commands=['дежурю','Дежурю'])
+@rr_bot.message_handler(commands=['дежурю','Дежурю', 'Дежурный', 'дежурный'])
 def get_duty_id(message):
     global duty_eng
     rr_bot.reply_to(message,f'Дежурный зарегистрирован - {message.from_user.first_name} {message.from_user.last_name}')
@@ -28,7 +34,7 @@ def get_duty_id(message):
     with open ('duty.json','w',encoding='utf8') as duty_file:
         json.dump(duty_eng,duty_file, ensure_ascii=False)
 
-@rr_bot.message_handler(commands=['дежурный','Дежурный'])
+@rr_bot.message_handler(commands=['КтоДежурит','ктодежурит'])
 def who_duty_today(message):
     global duty_eng
     if duty_eng:
