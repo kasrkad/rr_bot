@@ -1,1 +1,8 @@
 bot_config.py
+chromedriver.exe
+html
+geckodriver.log
+config.py
+__pycache__
+*.pyc
+bot_functions.py
