@@ -50,7 +50,6 @@ def start_cli(message):
     answer = message.text
     if answer.strip() == 'Y':
         rr_bot.send_message(message.chat.id,f"Стартуем simicli с параметрами: applycommit dev {commit}")
-        # out = subprocess.call(['./simi_cli/artifact.sh','applycommit','dev', commit])
         out = subprocess.Popen(['./simi_cli/artifact.sh','applycommit','dev', commit], stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
         out.wait()
         logs_for_send = glob.glob('./logs/*log.txt')
