@@ -22,10 +22,10 @@ def write_json(jobs_list,actual_filename,log_filename):
     if jobs_list:
         for line in jobs_list:
             line_for_json+= str(line)+"\n"
-        with open (f"./logs/{actual_filename}","w",encoding="utf8") as monitor_file:
+        with open (f"./parse_logs/{actual_filename}","w",encoding="utf8") as monitor_file:
             monitor_file.write(line_for_json)
 
-        with open (f"./logs/{log_filename}","a", encoding="utf8") as log_file:
+        with open (f"./parse_logs/{log_filename}","a", encoding="utf8") as log_file:
             log_file.write(line_for_json+"\n")
 
 

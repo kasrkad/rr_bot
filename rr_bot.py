@@ -12,7 +12,7 @@ import config
 def check_sla(filename):
    rr_bot = telebot.TeleBot(config.BOT_TOKEN, parse_mode='MARKDOWN')
    duty = check_duty_eng()
-   with open (f"./logs/{filename}", 'r') as rr_file:
+   with open (f"./parse_logs/{filename}", 'r') as rr_file:
 	   for line in rr_file.readlines():
 	   	line = line.replace("'",'"')
 	   	rr = json.loads(line)
