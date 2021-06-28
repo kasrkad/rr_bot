@@ -85,7 +85,7 @@ def download_document(message):
 
 @rr_bot.message_handler(commands=['help'])
 def print_help(message):
-    rr_bot.reply_to(message," Владею нюндзюцу:\n /help : выведу это сообщение,\n /дежурю или /дежурный : регистрирую как дежурного инженера,\n /ктоДежурит: укажу на дежурного инженера,\n /скачай docID : скачаю с ППАК документ и отправлю в личку.\n/cct: загружу по коммиту cct по коммиту в ТЕСТ", parse_mode="MARKDOWN")
+    rr_bot.reply_to(message," Владею нюндзюцу:\n /help : выведу это сообщение,\n /дежурю или /дежурный : регистрирую как дежурного инженера,\n /ктоДежурит: укажу на дежурного инженера,\n /скачай docID : скачаю с ППАК документ и отправлю в личку.\n/cct: загружу cct по коммиту в ТЕСТ", parse_mode="MARKDOWN")
 
 @rr_bot.message_handler(commands=['дежурю','Дежурю', 'Дежурный', 'дежурный'])
 def get_duty_id(message):
