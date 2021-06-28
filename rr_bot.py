@@ -21,7 +21,7 @@ def check_sla(filename):
 	   		rr_bot.send_message(duty['t_id'], f"Заявка [{rr['record_id']}](https://hpsm.emias.mos.ru/sm/index.do?lang=) не взята в работу!")
 
 def Get_HPSM_table(url):
-   with open ('./logs/work_log', 'a') as log:
+   with open ('./parse_logs/work_log', 'a') as log:
       log.write("Установка опций\n")
       options = webdriver.FirefoxOptions()
       options.add_argument('--headless')
