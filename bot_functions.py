@@ -35,6 +35,19 @@ def validate_artifact_string(artifact_message):
 
 def validate_commit_string(commit_message):
     commit = commit_message.text
-    if re.match(r'[a-z0-9]', commit.lower()):
+    if len(commit) == 9 and re.match(r'[a-z0-9]{9}', commit.lower()):
         return commit.lower()
     raise ValueError(f"Некорректный вид коммита {commit_message.text}, должно быть 9 символов, английские буквы и цифры, отсутствовать спецзнаки", commit_message.chat.id)   
+
+def validate_dociment_id(docid_list_message):
+    docid_list = docid_list_message.text.split(' ')
+    if len(docid_list) > 1:
+        out_list = []
+        for id in docid_list[1:]:
+            if len(id) == 36 and re.match(r'[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}',id.lower().strip()):
+                out_list.append(id.lower().strip())
+            else:
+                raise ValueError(f'ID документа {id} некорректный: возможны пропущенные буквы, кирилические символы, спецсимволы.\nПример: f930e251-c468-49e6-a889-e6db0885221a ', docid_list_message.chat.id)
+        return out_list
+    
+    raise ValueError(f'Передан пустой список документов', docid_list_message.chat.id)

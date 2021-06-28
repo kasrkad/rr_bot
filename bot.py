@@ -70,15 +70,18 @@ def start_cli(message):
 
 @rr_bot.message_handler(commands=['скачай'])
 def download_document(message):
-    download_list = message.text.split(" ")
-    for doc in download_list[1:]:
-        with open('./doc_download_log/log.txt', 'a', encoding='utf8') as doc_log:
-            doc_log.write(f"{doc} скачан пользователем {message.from_user.first_name} {message.from_user.last_name} - id {message.from_user.id}\n")
-        print(message.from_user.id)
-        get_document(doc,message.from_user.id)
-        document = open(f'./documents_output/{doc}.xml')
-        rr_bot.send_document(message.from_user.id, document)
-        os.remove(f'./documents_output/{doc}.xml')
+    try:
+        download_list = bot_functions.validate_dociment_id(message)
+        for doc in download_list:
+            with open('./doc_download_log/log.txt', 'a', encoding='utf8') as doc_log:
+                doc_log.write(f"{doc} скачан пользователем {message.from_user.first_name} {message.from_user.last_name} - id {message.from_user.id}\n")
+            print(message.from_user.id)
+            get_document(doc,message.from_user.id)
+            document = open(f'./documents_output/{doc}.xml')
+            rr_bot.send_document(message.from_user.id, document)
+            os.remove(f'./documents_output/{doc}.xml')
+    except ValueError as exc:
+        rr_bot.send_message(exc.args[1], exc.args[0])
 
 @rr_bot.message_handler(commands=['help'])
 def print_help(message):
