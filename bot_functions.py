@@ -4,6 +4,15 @@ import json
 import requests
 import re
 from config import CORRECT_ARTIFACTS
+import datetime
+
+def write_cct_log(commit=None,user_id=None):
+    date = datetime.datetime.today().strftime("%Y-%m-%d")
+    with open('./simi_cli/ids', 'r', encoding='utf8') as ids_file:
+        cct_and_artifacts = ids_file.readline()
+    with open(f'./cct_log/{date}','a', encoding='utf8') as log_file:
+        log_file.write(f'{user_id} запростил загрузку {cct_and_artifacts} , commit:{commit}\n')
+
 
 def remove_files (list):
     for file in list:
@@ -36,6 +45,7 @@ def validate_artifact_string(artifact_message):
 def validate_commit_string(commit_message):
     commit = commit_message.text
     if len(commit) == 9 and re.match(r'[a-z0-9]{9}', commit.lower()):
+        write_cct_log(user_id=commit_message.from_user.id,commit=commit)
         return commit.lower()
     raise ValueError(f"Некорректный вид коммита {commit_message.text}, должно быть 9 символов, английские буквы и цифры, отсутствовать спецзнаки", commit_message.chat.id)   
 
