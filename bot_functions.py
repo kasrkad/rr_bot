@@ -3,7 +3,7 @@ import os
 import json
 import requests
 import re
-from config import CORRECT_ARTIFACTS
+import config
 import datetime
 
 def write_cct_log(commit=None,user_id=None):
@@ -11,8 +11,7 @@ def write_cct_log(commit=None,user_id=None):
     with open('./simi_cli/ids', 'r', encoding='utf8') as ids_file:
         cct_and_artifacts = ids_file.readline()
     with open(f'./cct_log/{date}','a', encoding='utf8') as log_file:
-        log_file.write(f'{user_id} запростил загрузку {cct_and_artifacts} , commit:{commit}\n')
-
+        log_file.write(f'{user_id} запустил загрузку {cct_and_artifacts} , commit:{commit}\n')
 
 def remove_files (list):
     for file in list:
@@ -38,7 +37,7 @@ def validate_artifact_string(artifact_message):
     artifacts_for_check = artifacts.split(',')
     artifacts_for_check = set(artifacts_for_check)
     for artifact in artifacts_for_check:
-        if artifact.strip().lower() not in CORRECT_ARTIFACTS:
+        if artifact.strip().lower() not in config.CORRECT_ARTIFACTS:
             raise ValueError(f'Нeкорректные данные в списке артефактов {artifact_message.text}', artifact_message.chat.id)
     return f'{",".join(x.strip().lower() for x in artifacts_for_check)}'
 
@@ -61,3 +60,11 @@ def validate_dociment_id(docid_list_message):
         return out_list
     
     raise ValueError(f'Передан пустой список документов', docid_list_message.chat.id)
+
+def get_document(id_,tg_user_id):
+    id_ = id_.rstrip()
+    body = config.REQUEST_BODY.format(id=id_,tg=tg_user_id)
+    headers = {'content-type': 'text/xml'}
+    response = requests.post(config.URL_FOR_DOC, data=body, headers=headers)
+    with open("documents_output/" + id_ + ".xml", "wb+") as id_file:
+        id_file.write(response.text.encode('utf-8').strip())

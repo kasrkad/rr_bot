@@ -4,7 +4,7 @@ import subprocess
 import telebot
 import config
 import json
-import bot_functions 
+import bot_functions
 import glob
 
 rr_bot = telebot.TeleBot(config.BOT_TOKEN, parse_mode='MARKDOWN')
@@ -64,7 +64,7 @@ def start_cli(message):
         for files in logs_for_send:
             doc = open(files)
             rr_bot.send_document(message.from_user.id,doc)
-        remove_files(glob.glob("./logs/*"))
+        bot_functions.remove_files(glob.glob("./logs/*"))
     else:
         rr_bot.send_message(message.chat.id,"Запуск отменен, переделывай.")
 
@@ -76,7 +76,7 @@ def download_document(message):
             with open('./doc_download_log/log.txt', 'a', encoding='utf8') as doc_log:
                 doc_log.write(f"{doc} скачан пользователем {message.from_user.first_name} {message.from_user.last_name} - id {message.from_user.id}\n")
             print(message.from_user.id)
-            get_document(doc,message.from_user.id)
+            bot_functions.get_document(doc,message.from_user.id)
             document = open(f'./documents_output/{doc}.xml')
             rr_bot.send_document(message.from_user.id, document)
             os.remove(f'./documents_output/{doc}.xml')
@@ -85,7 +85,7 @@ def download_document(message):
 
 @rr_bot.message_handler(commands=['help'])
 def print_help(message):
-    rr_bot.reply_to(message," Владею нюндзюцу:\n /help : выведу это сообщение,\n /дежурю или /дежурный : регистрирую как дежурного инженера,\n /ктоДежурит: укажу на дежурного инженера,\n /скачай docID : скачаю с ППАК документ и отправлю в личку.", parse_mode="MARKDOWN")
+    rr_bot.reply_to(message," Владею нюндзюцу:\n /help : выведу это сообщение,\n /дежурю или /дежурный : регистрирую как дежурного инженера,\n /ктоДежурит: укажу на дежурного инженера,\n /скачай docID : скачаю с ППАК документ и отправлю в личку.\n/cct: загружу по коммиту cct по коммиту в ТЕСТ", parse_mode="MARKDOWN")
 
 @rr_bot.message_handler(commands=['дежурю','Дежурю', 'Дежурный', 'дежурный'])
 def get_duty_id(message):
