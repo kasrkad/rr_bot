@@ -17,7 +17,7 @@ replace_list = [
     "_{_VALUE_}_Выполняется"
 ]
 
-def write_json(jobs_list,actual_filename,log_filename):
+def write_json(jobs_list,actual_filename):
     line_for_json = ""
     if jobs_list:
         for line in jobs_list:
@@ -25,12 +25,8 @@ def write_json(jobs_list,actual_filename,log_filename):
         with open (f"./parse_logs/{actual_filename}","w",encoding="utf8") as monitor_file:
             monitor_file.write(line_for_json)
 
-        with open (f"./parse_logs/{log_filename}","a", encoding="utf8") as log_file:
-            log_file.write(line_for_json+"\n")
-
 
 def parse_hpsm(file):
-    date = datetime.datetime.today().strftime("%Y-%m-%d")
     time = str(datetime.datetime.now().time())
     monitor_list = []
     others_list = []
@@ -52,6 +48,6 @@ def parse_hpsm(file):
                         monitor_list.append({"check_time":f"{time}", "record_id":row["record_id"], "status": row["status"], "group":row["group"], "itemType": row["itemType"],
                         "assignee": row["assignee"], "priotity": row["priority"], "sla": row["em_next_ola_breach"] })    
                    
-    write_json(monitor_list, "monitor_actual.json", f"monitor_log_for_{date}.json")
-    write_json(others_list, "other_actual.json", f"other_log_for_{date}.json")
+    write_json(monitor_list, "monitor_actual.json")
+    write_json(others_list, "other_actual.json")
     
