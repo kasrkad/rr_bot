@@ -6,6 +6,14 @@ import re
 import config
 import datetime
 
+def check_working_time():
+    work_hours = datetime.datetime.now()
+    seq = int (work_hours.strftime("%H"))
+    if seq >= 10 and seq <= 22:
+        print(f'{seq} hours')
+        return True
+    return False
+
 def write_cct_log(commit=None,user_id=None):
     date = datetime.datetime.today().strftime("%Y-%m-%d")
     with open('./simi_cli/ids', 'r', encoding='utf8') as ids_file:
@@ -17,11 +25,11 @@ def remove_files (list):
     for file in list:
         os.remove(file)
 
-def check_duty_eng():
-    if os.path.exists('duty.json'):
-        with open ('duty.json', 'r', encoding='utf8') as duty_file:
-            duty_eng = json.load(duty_file)
-        return duty_eng
+def load_from_json(jsonfile):
+    if os.path.exists(jsonfile):
+        with open (jsonfile, 'r', encoding='utf8') as json_file:
+            json_data = json.load(json_file)
+        return json_data
     else:
         return None
 

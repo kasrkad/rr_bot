@@ -5,18 +5,18 @@ import time
 import telebot
 import json
 
-from bot_functions import check_duty_eng
+from bot_functions import load_from_json, check_working_time
 from parser import parse_hpsm
 import config
 
 def check_sla(filename):
    rr_bot = telebot.TeleBot(config.BOT_TOKEN, parse_mode='MARKDOWN')
-   duty = check_duty_eng()
+   duty = load_from_json('duty.json')
    with open (f"./parse_logs/{filename}", 'r') as rr_file:
 	   for line in rr_file.readlines():
 	   	line = line.replace("'",'"')
 	   	rr = json.loads(line)
-	   	if rr['status'] != 'В работе':
+	   	if rr['status'] != 'В работе' and check_working_time():
 	   		rr_bot.send_message(config.CHAT_ID, f"Заявка [{rr['record_id']}](https://hpsm.emias.mos.ru/sm/index.do?lang=) не взята в работу!Вызываем ответственных: \n {config.DUTY_OWNER} \n [{duty['first_name']} {duty['last_name']}](tg://user?id={duty['t_id']})")
 	   		rr_bot.send_message(duty['t_id'], f"Заявка [{rr['record_id']}](https://hpsm.emias.mos.ru/sm/index.do?lang=) не взята в работу!")
 
