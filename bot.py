@@ -8,9 +8,9 @@ import bot_functions
 import glob
 
 rr_bot = telebot.TeleBot(config.BOT_TOKEN, parse_mode='MARKDOWN')
-
 global duty_eng
-duty_eng = bot_functions.check_duty_eng()
+duty_eng = bot_functions.load_from_json('duty.json')
+
 
 @rr_bot.message_handler(commands=['cct'])
 def artifact_download_dev(message): # грузит только на дев и только с коммита
@@ -101,7 +101,7 @@ def who_duty_today(message):
     if duty_eng:
         rr_bot.reply_to(message,f"Сегодня дежурит [{duty_eng['first_name']} {duty_eng['last_name']}](tg://user?id={duty_eng['t_id']})")
     else:
-        rr_bot.reply_to(message,f"Дежурный не обнаружен, вызываем ответственного: [Александр Бауман](tg://user?id=753785354)")
+        rr_bot.reply_to(message,f"Дежурный не обнаружен, вызываем ответственного: {config.DUTY_OWNER}")
 
 if __name__=='__main__':
-    rr_bot.polling(none_stop=True, interval=0, timeout=30)
+    rr_bot.polling(none_stop=True, interval=0, timeout=20)
