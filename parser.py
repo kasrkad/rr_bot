@@ -18,6 +18,12 @@ replace_list = [
 ]
 
 def write_json(jobs_list,actual_filename):
+    """[Пишет в файлы результаты парсинка]
+
+    Args:
+        jobs_list (dict): [словарь для парсинга в json]
+        actual_filename (json_name): [имя файла куда сложить заявки по соответствующим критериям]
+    """
     line_for_json = ""
     if jobs_list:
         for line in jobs_list:
@@ -27,6 +33,11 @@ def write_json(jobs_list,actual_filename):
 
 
 def parse_hpsm(file):
+    """[Парсит заданный файл по соответсующим шаблонам]
+
+    Args:
+        file (json_filename): [Парсит переданный файл]
+    """
     time = str(datetime.datetime.now().time())
     monitor_list = []
     others_list = []
