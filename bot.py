@@ -111,6 +111,7 @@ def print_help(message):
 
 @rr_bot.message_handler(commands=['дежурю', 'Дежурю', 'Дежурный', 'дежурный'])
 def get_duty_id(message):
+    bot_functions.check_permission(message, users)
     global duty_eng
     rr_bot.send_message(config.CHAT_ID, f'Дежурный зарегистрирован - [{message.from_user.first_name} {message.from_user.last_name}](tg://user?id={message.from_user.id})')
     rr_bot.send_message(config.CHAT_ID, f'Предыдущий дежурный - [{duty_eng["first_name"]} {duty_eng["last_name"]}](tg://user?id={duty_eng["t_id"]})')
