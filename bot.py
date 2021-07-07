@@ -33,7 +33,6 @@ def handle_message(message):
         rr_bot.send_message(exc.args[1], exc.args[0])
 
 
-
 @rr_bot.message_handler(commands=['cct'])
 def artifact_download_dev(message):  # грузит только на дев и только с коммита
     try:
@@ -51,7 +50,6 @@ def cct_enter_step(message):
         cct = bot_functions.validate_cct_string(message)
         with open('./simi_cli/ids', 'w', encoding='utf8') as enter_cct_file:
             enter_cct_file.write(f"{cct}; ")
-        print(cct)
         msg = rr_bot.reply_to(message, "Введите параметры загрузки артефактов в формате simicli : cct, vis, tmpl.\n Пример: cct, vis ")
         rr_bot.register_next_step_handler(msg, artifact_enter_step)
     except ValueError as exc:
@@ -78,10 +76,8 @@ def simi_cli_check_and_start(message):
     global commit
     try:
         commit = bot_functions.validate_commit_string(message)
-        print(commit)
         with open('./simi_cli/ids', 'r', encoding='utf8') as check_ids_file:
             simi_cli_ids = check_ids_file.readline()
-        print(f"Проверьте настройки для simi_cli\n ids {simi_cli_ids},\n commit {commit}")
         msg = rr_bot.reply_to(message, f"Проверьте настройки для simicli,\nДля загрузки: {simi_cli_ids},\nCommit: {commit}\nЕсли все корректно, введите Y")
         rr_bot.register_next_step_handler(msg, start_cli)
     except ValueError as exc:
@@ -115,7 +111,6 @@ def download_document(message):
         for doc in download_list:
             with open('./doc_download_log/log.txt', 'a', encoding='utf8') as doc_log:
                 doc_log.write(f"{doc} скачан пользователем {message.from_user.first_name} {message.from_user.last_name} - id {message.from_user.id}\n")
-            print(message.from_user.id)
             bot_functions.get_document(doc, message.from_user.id)
             document = open(f'./documents_output/{doc}.xml')
             rr_bot.send_document(message.from_user.id, document)
