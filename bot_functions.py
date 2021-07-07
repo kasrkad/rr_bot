@@ -9,7 +9,7 @@ import pathlib
 
 
 path = pathlib.Path().absolute()
-
+pattern = r"[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}"
 
 def check_permission(message, users):
     if str(message.from_user.id) not in users.keys():

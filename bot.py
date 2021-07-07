@@ -6,12 +6,32 @@ import config
 import json
 import bot_functions
 import glob
+import re
+
 
 rr_bot = telebot.TeleBot(config.BOT_TOKEN, parse_mode='MARKDOWN')
 global duty_eng
 duty_eng = bot_functions.load_from_json('duty.json')
 global users
 users = bot_functions.load_from_json('users.json')
+
+
+@rr_bot.message_handler(regexp=bot_functions.pattern)
+def handle_message(message):
+    try:
+        bot_functions.check_permission(message, users)
+        if message.forward_from:
+            docs_from_forward = re.findall(bot_functions.pattern, message.text)
+            for doc in docs_from_forward:
+                with open('./doc_download_log/log.txt', 'a', encoding='utf8') as doc_log:
+                    doc_log.write(f"{doc} скачан пользователем {message.from_user.first_name} {message.from_user.last_name} - id {message.from_user.id}\n")
+                bot_functions.get_document(doc, message.from_user.id)
+                document = open(f'./documents_output/{doc}.xml')
+                rr_bot.send_document(message.from_user.id, document)
+                os.remove(f'./documents_output/{doc}.xml')
+    except ValueError as exc:
+        rr_bot.send_message(exc.args[1], exc.args[0])
+
 
 
 @rr_bot.message_handler(commands=['cct'])
