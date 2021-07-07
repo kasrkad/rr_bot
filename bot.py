@@ -1,4 +1,4 @@
-#!/bin/python3
+!/bin/python3
 import os
 import subprocess
 import telebot
@@ -24,7 +24,8 @@ def artifact_download_dev(message):  # грузит только на дев и 
         rr_bot.send_message(exc.args[1], exc.args[0])
     except Exception as exc:
         print(exc)
-                        
+
+
 def cct_enter_step(message):
     try:
         cct = bot_functions.validate_cct_string(message)
@@ -111,7 +112,8 @@ def print_help(message):
 @rr_bot.message_handler(commands=['дежурю', 'Дежурю', 'Дежурный', 'дежурный'])
 def get_duty_id(message):
     global duty_eng
-    rr_bot.reply_to(message, f'Дежурный зарегистрирован - {message.from_user.first_name} {message.from_user.last_name}')
+    rr_bot.send_message(config.CHAT_ID, f'Дежурный зарегистрирован - [{message.from_user.first_name} {message.from_user.last_name}](tg://user?id={message.from_user.id})')
+    rr_bot.send_message(config.CHAT_ID, f'Предыдущий дежурный - [{duty_eng["first_name"]} {duty_eng["last_name"]}](tg://user?id={duty_eng["t_id"]})')
     duty_eng = {"t_id": message.from_user.id, "first_name": message.from_user.first_name, "last_name": message.from_user.last_name}
     with open('duty.json', 'w', encoding='utf8') as duty_file:
         json.dump(duty_eng, duty_file, ensure_ascii=False)
