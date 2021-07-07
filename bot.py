@@ -104,4 +104,8 @@ def who_duty_today(message):
         rr_bot.reply_to(message,f"Дежурный не обнаружен, вызываем ответственного: {config.DUTY_OWNER}")
 
 if __name__=='__main__':
-    rr_bot.polling(none_stop=True, interval=0, timeout=20)
+    try:
+        rr_bot.polling(none_stop=True, interval=0, timeout=20)
+    except Exception as exc:
+        print(exc)
+        pass

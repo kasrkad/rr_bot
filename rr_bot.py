@@ -58,10 +58,10 @@ if __name__ == '__main__':
                 check_sla('monitor_actual.json')
                 time.sleep(config.CHECK_TIME)
             else:
-                time.sleep(3600)
+                time.sleep(1800)
                 continue
     except Exception as exc:
         print (exc)
         with open('exc_parse.txt', 'a', encoding='utf8') as exc_file:
-            exc_file.write(str(exc_file))
+            exc_file.write(str(exc))
         pass
