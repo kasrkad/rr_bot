@@ -25,9 +25,9 @@ def check_working_time():
     work_hours = datetime.datetime.now()
     hours = int(work_hours.strftime("%H"))
     minutes = int(work_hours.strftime("%M"))
+    with open('check_time.log', 'w', encoding='utf8') as time_file:
+        time_file.write(f'last check in {hours} hours {minutes} minutes')
     if hours >= 10 and hours <= 22:
-        with open('check_time.log', 'w', encoding='utf8') as time_file:
-            time_file.write(f'last check in {hours} hours {minutes} minutes')
         return True
     return False
 
