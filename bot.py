@@ -20,15 +20,14 @@ users = bot_functions.load_from_json('users.json')
 def handle_message(message):
     try:
         bot_functions.check_permission(message, users)
-        if message.forward_from:
-            docs_from_forward = re.findall(bot_functions.pattern, message.text)
-            for doc in docs_from_forward:
-                with open('./doc_download_log/log.txt', 'a', encoding='utf8') as doc_log:
-                    doc_log.write(f"{doc} скачан пользователем {message.from_user.first_name} {message.from_user.last_name} - id {message.from_user.id}\n")
-                bot_functions.get_document(doc, message.from_user.id)
-                document = open(f'./documents_output/{doc}.xml')
-                rr_bot.send_document(message.from_user.id, document)
-                os.remove(f'./documents_output/{doc}.xml')
+        docs_from_forward = re.findall(bot_functions.pattern, message.text)
+        for doc in docs_from_forward:
+            with open('./doc_download_log/log.txt', 'a', encoding='utf8') as doc_log:
+                doc_log.write(f"{doc} скачан пользователем {message.from_user.first_name} {message.from_user.last_name} - id {message.from_user.id}\n")
+            bot_functions.get_document(doc, message.from_user.id)
+            document = open(f'./documents_output/{doc}.xml')
+            rr_bot.send_document(message.from_user.id, document)
+            os.remove(f'./documents_output/{doc}.xml')
     except ValueError as exc:
         rr_bot.send_message(exc.args[1], exc.args[0])
 
@@ -103,25 +102,9 @@ def start_cli(message):
         rr_bot.send_message(message.chat.id, "Запуск отменен, переделывай.")
 
 
-@rr_bot.message_handler(commands=['скачай'])
-def download_document(message):
-    try:
-        bot_functions.check_permission(message, users)
-        download_list = bot_functions.validate_dociment_id(message)
-        for doc in download_list:
-            with open('./doc_download_log/log.txt', 'a', encoding='utf8') as doc_log:
-                doc_log.write(f"{doc} скачан пользователем {message.from_user.first_name} {message.from_user.last_name} - id {message.from_user.id}\n")
-            bot_functions.get_document(doc, message.from_user.id)
-            document = open(f'./documents_output/{doc}.xml')
-            rr_bot.send_document(message.from_user.id, document)
-            os.remove(f'./documents_output/{doc}.xml')
-    except ValueError as exc:
-        rr_bot.send_message(exc.args[1], exc.args[0])
-
-
 @rr_bot.message_handler(commands=['help'])
 def print_help(message):
-    rr_bot.reply_to(message, " Владею нюндзюцу:\n /help : выведу это сообщение,\n /дежурю или /дежурный : регистрирую как дежурного инженера,\n /ктоДежурит: укажу на дежурного инженера,\n /скачай docID : скачаю с ППАК документ и отправлю в личку.\n/cct: загружу cct по коммиту в ТЕСТ", parse_mode="MARKDOWN")
+    rr_bot.reply_to(message, " Владею нюндзюцу:\n /help : выведу это сообщение,\n /дежурю или /дежурный : регистрирую как дежурного инженера,\n /ктоДежурит: укажу на дежурного инженера,\nПришли в личку docID : скачаю с ППАК документ и пришлю его.\n/cct: загружу cct по коммиту в ТЕСТ", parse_mode="MARKDOWN")
 
 
 @rr_bot.message_handler(commands=['дежурю', 'Дежурю', 'Дежурный', 'дежурный'])
