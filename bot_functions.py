@@ -3,15 +3,37 @@ import os
 import json
 import requests
 import re
-import config
 import datetime
 import pathlib
-
+import config
 
 path = pathlib.Path().absolute()
 pattern = r"[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}"
 
+def change_duty_phone(t_id,users):
+    """При регистрации переключаем номер дежурного.
+
+    """
+    payload = config.ASTERISK_PAYLOAD
+    eng_id = str(t_id)
+    phones = list(users[eng_id].values())[0]
+    print(phones)
+    payload['grplist'] = f'{phones}#'
+    ring_reload = {"handler": "reload"}
+    print(payload)
+    r = requests.Session()
+    auth = r.post('https://pbx/index.php',data=config.ASTERISK_LOGIN, verify=False)
+    change_ring_group = r.post(config.ASTERISK_GROUP, data=payload,cookies=r.cookies,headers=config.ASTERSK_HEADERS, verify=False, allow_redirects=True)
+    reload_group_settings = r.post(config.ASTERISK_GROUP, data=ring_reload, verify=False)
+
 def check_permission(message, users):
+    """
+
+    Проверяем доступ к функциям бота по tg_id
+    нет доступа кидаем исключение
+    Raises:
+        ValueError: [description]
+    """
     if str(message.from_user.id) not in users.keys():
         raise ValueError(f"{message.from_user.last_name} {message.from_user.first_name} не имеет право давать боту комманды", message.from_user.id)
 

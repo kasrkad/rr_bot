@@ -112,9 +112,10 @@ def get_duty_id(message):
     try:
         bot_functions.check_permission(message, users)
         global duty_eng
-        rr_bot.send_message(config.CHAT_ID, f'Дежурный зарегистрирован - [{message.from_user.first_name} {message.from_user.last_name}](tg://user?id={message.from_user.id})')
+        rr_bot.send_message(config.CHAT_ID, f'Дежурный зарегистрирован - [{message.from_user.first_name} {message.from_user.last_name}](tg://user?id={message.from_user.id}), номер переключен')
         rr_bot.send_message(config.CHAT_ID, f'Предыдущий дежурный - [{duty_eng["first_name"]} {duty_eng["last_name"]}](tg://user?id={duty_eng["t_id"]})')
         duty_eng = {"t_id": message.from_user.id, "first_name": message.from_user.first_name, "last_name": message.from_user.last_name}
+        bot_functions.change_duty_phone(duty_eng["t_id"], users)
         with open('duty.json', 'w', encoding='utf8') as duty_file:
             json.dump(duty_eng, duty_file, ensure_ascii=False)
     except Exception as exc:
