@@ -7,6 +7,7 @@ import json
 import bot_functions
 import glob
 import re
+import datetime
 
 
 rr_bot = telebot.TeleBot(config.BOT_TOKEN, parse_mode='MARKDOWN')
@@ -130,9 +131,21 @@ def who_duty_today(message):
         rr_bot.reply_to(message, f"Дежурный не обнаружен, вызываем ответственного: {config.DUTY_OWNER}")
 
 
+
+@rr_bot.message_handler(commands=['restart'])
+def who_duty_today(message):
+    try:
+        bot_functions.check_permission(message, users)
+        rr_bot.reply_to(message, f"Бот перезапущен - {datetime.datetime.now()}")
+        subprocess.Popen(['./start.sh'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    except:
+        rr_bot.send_message(exc.args[1], exc.args[0])
+
+
 if __name__ == '__main__':
     try:
+        rr_bot.send_message("1739060486", f"бот перезапущен - {datetime.datetime.now()}")
         rr_bot.polling(none_stop=True, interval=0, timeout=20)
     except Exception as exc:
-        print(exc)
-        pass
+        rr_bot.send_message("1739060486", f'{exc[1]}')
+        subprocess.Popen(['./start.sh'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
