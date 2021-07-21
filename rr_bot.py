@@ -3,6 +3,8 @@ import time
 import telebot
 import json
 import datetime
+import config
+
 
 class HpsmChecker:
     """
@@ -10,15 +12,14 @@ class HpsmChecker:
     """
     
 
-    def __init__(self, user_login=None, user_password=None, cycle_check_time=None, bot_token=None):
+    def __init__(self, user_login=None, user_password=None, bot_token=None, cycle_check_time=600, group_id='1739060486'):
         self.user_login = user_login
         self.user_password = user_password
         self.hpsm_url = 'https://hpsm.emias.mos.ru/sm/index.do'
-        self.cycle_check_time = 600
+        self.cycle_check_time = cycle_check_time
         self.tickets = {}    
-        self.group_id = '-1001308192648'
+        self.group_id = group_id 
         self.rr_tickets_count = 0
-        # self.group_id = '1739060486' 
         self.duty_engeneer = {}
         self.last_tickets_check = ''
         self.bot = telebot.TeleBot(bot_token, parse_mode='MARKDOWN')
@@ -105,8 +106,7 @@ class HpsmChecker:
         work_hours = datetime.datetime.now()
         hours = int(work_hours.strftime("%H"))
         minutes = int(work_hours.strftime("%M"))
-        self.last_tickets_check = f'{hours}:{minutes}'
-        print(self.last_tickets_check)
+        self.last_tickets_check = f'{hours:02d}:{minutes:02d}'
         if hours >= 10 and hours <= 22:
             return True
         return False
@@ -119,12 +119,17 @@ class HpsmChecker:
     
     def check_sla(self):
         rr_counter = 0
+        ticket_counter = 0
         for ticket in self.tickets:
             if ticket['status'] != 'В работе' and self.check_working_time():
                self.send_notification(ticket["record_id"])
             elif ticket['description'] in self.rr_list:
                 rr_counter+=1
+            ticket_counter+=1
         self.rr_tickets_count = rr_counter
+        with open('last_check.json', 'w', encoding='utf8') as json_file:
+            json.dump({"check_time":self.last_tickets_check,"tickets_count":ticket_counter}, json_file, ensure_ascii=False)
+        self.rr_tickets_count = 0
 
     def rr_time(self):
         current_hour = datetime.datetime.now().strftime("%H")
@@ -149,7 +154,6 @@ class HpsmChecker:
                 html = self.get_tickets()
                 self.tickets = self.parse_html(html)
                 self.check_sla()
-                print(self.rr_tickets_count)
                 self.rr_time()
                 time.sleep(self.cycle_check_time)
             else:
@@ -158,5 +162,5 @@ class HpsmChecker:
 
 if __name__ == '__main__':
 
-    checker = HpsmChecker(user_login='', user_password='', bot_token = '')
+    checker = HpsmChecker(user_login='MeleshenkovI', user_password='Boradori4040', bot_token=config.BOT_TOKEN, cycle_check_time = config.CHECK_TIME )
     checker.run()
