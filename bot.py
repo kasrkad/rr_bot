@@ -4,6 +4,7 @@ import os
 import json
 from subprocess import Popen, PIPE
 from config import *
+from artifacts import *
 import re
 import requests
 
@@ -46,7 +47,7 @@ class ECC_telegram_bot:
             ValueError: [description]
         """
         if str(message.from_user.id) not in self.valid_users.keys():
-            raise ValueError(f"{message.from_user.last_name} {message.from_user.first_name} не имеет право давать боту комманды", message.from_user.id)
+            raise ValueError(f"{message.from_user.last_name} {message.from_user.first_name} не имеет право давать боту комманды")
 
     
     def download_document(self, id_, tg_user_id):
@@ -98,10 +99,29 @@ class ECC_telegram_bot:
         os.execv(sys.executable, ['python3'] + sys.argv)
 
 
-    def commands(self):
+    def bot_commands(self):
         """
         Вызывается чтобы подсунуть боту команды которые он должен обрабатывать
         """
+
+
+        @self.bot.message_handler(commands=['загрузи'])
+        def load_artifact(message):
+            try:
+                self.check_permission(message)
+                handler = Cct_message_handler_loader(self.bot)
+                handler.target_stand_set(message)
+            except ValueError as valexc:
+                self.bot.reply_to(message,valexc.args[0])
+                        
+        @self.bot.message_handler(commands=['перенеси'])
+        def load_artifact(message):
+            try:
+                self.check_permission(message)
+                handler = Cct_message_hander_mover(self.bot)
+                handler.target_stand_set(message)
+            except ValueError as valexc:
+                self.bot.reply_to(message,valexc.args[0])
 
         @self.bot.message_handler(commands=['status'])
         def status_report(message):
@@ -113,11 +133,12 @@ class ECC_telegram_bot:
                         self.bot.reply_to(message, f'''Дежурный - [{self.duty_engeneer["first_name"]} {self.duty_engeneer["last_name"]}](tg://user?id={self.duty_engeneer["t_id"]}).
 Последняя проверка - {check_status["check_time"]}.
 Кол-во активных заявок - {check_status["tickets_count"]}.
+Время между проверками заявок {int(HPSM_CHECK_TIME)//60} мин.
                               ''')
                 else:
                     self.bot.reply_to(message, "Невозможно получить данные о последней проверке, возможно необходим перезапуск.")
             except ValueError as valexc:
-                self.bot.send_message(valexc.args[1], valexc.args[0])
+                self.bot.reply_to(message, valexc.args[0])
             except Exception as others:
                 print(others)
            
@@ -133,14 +154,18 @@ class ECC_telegram_bot:
                 with open('duty.json', 'w', encoding='utf8') as duty_file:
                     json.dump(self.duty_engeneer, duty_file, ensure_ascii=False)
             except ValueError as exc:
-                self.bot.send_message(exc.args[1], exc.args[0])
+                self.bot.reply_to(exc.args[0])
             except Exception as others:
                 print(f'{others}')
 
 
         @self.bot.message_handler(commands=['help'])
         def help_print(message):
-            self.bot.send_message(message.from_user.id,"/help - это сообщение,\n/дежурю - регистрирую как дежурного, переключаю телефон на дежурного,\n/status - покажу дежурного и статус заявок")
+            self.bot.send_message(message.from_user.id,"""/help - покажу это сообщение,
+/дежурю - регистрирую как дежурного, переключаю телефон на дежурного,
+/status - покажу дежурного и статус заявок,
+/загрузи - грузим на стенд из списка сст по коммиту,
+/перенеси - перенос сст со стенда на стенд""")
 
         @self.bot.message_handler(commands=['restart'])
         def restart(message):
@@ -149,9 +174,10 @@ class ECC_telegram_bot:
                 self.bot.reply_to(message,"Бот перезапускается")
                 self.restart_bot()
             except ValueError as exc:
-                self.bot.send_message(exc.args[1], exc.args[0])
+                self.bot.reply_to(exc.args[0])
             except Exception as others:
                 print(others)
+
 
         @self.bot.message_handler(regexp=self.document_download_pattern)
         def handle_message(message):
@@ -166,16 +192,18 @@ class ECC_telegram_bot:
                     self.bot.send_document(message.from_user.id, document)
                     os.remove(f'./docs/documents_output/{doc}.xml')
             except ValueError as exc:
-                self.bot.send_message(exc.args[1], exc.args[0])
+                self.bot.reply_to(message, exc.args[0])
 
 
     def run(self):
         try:
+            if HTTP_PROXY:
+                telebot.apihelper.proxy = {"http": HTTP_PROXY}
             self.load_duty_and_users()
-            self.commands()
+            self.bot_commands()
             self.start_hpsm_checker()
-            self.bot.send_message(ECC_CHAT_ID, "Бот запущен")
-            self.bot.polling(none_stop=True, interval=0, timeout=20)        
+            self.bot.send_message('1739060486', "Бот запущен")
+            self.bot.polling(none_stop=True, interval=0, timeout=20)
         except Exception as exc:
             print(exc)
             with open('t_bot.log', 'a', encoding='utf8') as t_bot_log:

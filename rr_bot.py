@@ -134,11 +134,11 @@ class HpsmChecker:
         current_hour = datetime.datetime.now().strftime("%H")
         current_min = datetime.datetime.now().strftime("%M")
         if int(current_hour) == 10 and self.morning_notification == False:
-            self.bot.send_message(self.group_id, f"[{self.duty_engeneer['first_name']} {self.duty_engeneer['last_name']}](tg://user?id={self.duty_engeneer['t_id']}) Время брать РРки!")
+            # self.bot.send_message(self.group_id, f"[{self.duty_engeneer['first_name']} {self.duty_engeneer['last_name']}](tg://user?id={self.duty_engeneer['t_id']}) Время брать РРки!")
             self.morning_notification = True
             self.evening_notification = False
         elif int(current_hour) == 17 and self.evening_notification == False:
-            self.bot.send_message(self.group_id, f"Эй! [{self.duty_engeneer['first_name']} {self.duty_engeneer['last_name']}](tg://user?id={self.duty_engeneer['t_id']}) Время выполнять РР!")
+            # self.bot.send_message(self.group_id, f"Эй! [{self.duty_engeneer['first_name']} {self.duty_engeneer['last_name']}](tg://user?id={self.duty_engeneer['t_id']}) Время выполнять РР!")
             self.morning_notification = False
             self.evening_notification = True
         
@@ -147,19 +147,23 @@ class HpsmChecker:
             self.bot.send_message(self.group_id,f"Внимание кол-во не закрытых РР - {self.rr_tickets_count}!")
 
     def run(self):
-        while True:
-            if self.check_working_time():
-                self.load_duty_engeneer()
-                html = self.get_tickets()
-                self.tickets = self.parse_html(html)
-                self.check_sla()
-                self.rr_time()
-                time.sleep(self.cycle_check_time)
-            else:
-                time.sleep(1800)
+        try:
+            while True:
+                if self.check_working_time():
+                    self.load_duty_engeneer()
+                    html = self.get_tickets()
+                    self.tickets = self.parse_html(html)
+                    self.check_sla()
+                    print(self.rr_tickets_count)
+                    self.rr_time()
+                    time.sleep(int(self.cycle_check_time))
+                else:
+                    time.sleep(1800)
+        except Exception as e:
+            self.bot.send_message(ECC_CHAT_ID, f"Я сломался {e.args}")
 
 
 if __name__ == '__main__':
 
-    checker = HpsmChecker(user_login=HPSM_USER, user_password=HPSM_PASS, bot_token=TG_BOT_TOKEN, cycle_check_time = HPSM_CHECK_TIME )
+    checker = HpsmChecker(user_login=HPSM_USER, user_password=HPSM_PASS, bot_token=TG_BOT_TOKEN, cycle_check_time = HPSM_CHECK_TIME, group_id=ECC_CHAT_ID)
     checker.run()
