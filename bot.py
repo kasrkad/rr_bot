@@ -57,11 +57,10 @@ class ECC_telegram_bot:
             tg_user_id ([str]): телеграм id пользователя скачивающего документ
         """
         id_ = id_.rstrip()
-        body = REQUEST_BODY.format(id=id_, tg=tg_user_id)
-        print(body)
+        body = REQUEST_BODY.format(id=id_, tg=tg_user_id, PPAK_SOAP_USER=PPAK_SOAP_USER)
         headers = {'content-type': 'text/xml'}
-        response = requests.post(config.URL_FOR_DOC, data=body, headers=headers)
-        with open("documents_output/" + id_ + ".xml", "wb+") as id_file:
+        response = requests.post(PPAK_SOAP_URL, data=body, headers=headers)
+        with open("./docs/documents_output/" + id_ + ".xml", "wb+") as id_file:
             id_file.write(response.text.encode('utf-8').strip())
     
     
@@ -83,8 +82,8 @@ class ECC_telegram_bot:
         ring_reload = {"handler": "reload"}
         print(payload)
         r = requests.Session()
-        auth = r.post('https://pbx/index.php',data=config.ASTERISK_LOGIN, verify=False)
-        change_ring_group = r.post(ASTERISK_GROUP, data=payload,cookies=r.cookies,headers=config.ASTERSK_HEADERS, verify=False, allow_redirects=True)
+        auth = r.post('https://pbx/index.php',data=ASTERISK_LOGIN, verify=False)
+        change_ring_group = r.post(ASTERISK_GROUP, data=payload,cookies=r.cookies,headers=ASTERSK_HEADERS, verify=False, allow_redirects=True)
         reload_group_settings = r.post(ASTERISK_GROUP, data=ring_reload, verify=False)
    
 
@@ -96,7 +95,7 @@ class ECC_telegram_bot:
         kill_gecko = Popen(['pkill','geckodriver'], stdout=PIPE, stderr=PIPE)
         kill_gecko.wait()
         os.sys.stdout.flush()
-        os.execv(sys.executable, ['python'] + sys.argv)
+        os.execv(sys.executable, ['python3'] + sys.argv)
 
 
     def commands(self):
@@ -108,12 +107,15 @@ class ECC_telegram_bot:
         def status_report(message):
             try:
                 self.check_permission(message)
-                with open('last_check.json', 'r', encoding='utf8') as json_check:
-                    check_status = json.load(json_check)
-                self.bot.reply_to(message, f'''Дежурный - [{self.duty_engeneer["first_name"]} {self.duty_engeneer["last_name"]}](tg://user?id={self.duty_engeneer["t_id"]}).
+                if os.path.exists('last_check.json'):
+                    with open('last_check.json', 'r', encoding='utf8') as json_check:
+                        check_status = json.load(json_check)
+                        self.bot.reply_to(message, f'''Дежурный - [{self.duty_engeneer["first_name"]} {self.duty_engeneer["last_name"]}](tg://user?id={self.duty_engeneer["t_id"]}).
 Последняя проверка - {check_status["check_time"]}.
 Кол-во активных заявок - {check_status["tickets_count"]}.
                               ''')
+                else:
+                    self.bot.reply_to(message, "Невозможно получить данные о последней проверке, возможно необходим перезапуск.")
             except ValueError as valexc:
                 self.bot.send_message(valexc.args[1], valexc.args[0])
             except Exception as others:
@@ -157,12 +159,12 @@ class ECC_telegram_bot:
                 self.check_permission(message)
                 docs_from_forward = re.findall(self.document_download_pattern, message.text)
                 for doc in docs_from_forward:
-                    with open('./doc_download_log/log.txt', 'a', encoding='utf8') as doc_log:
+                    with open('./docs/doc_download_log/log.txt', 'a', encoding='utf8') as doc_log:
                         doc_log.write(f"{doc} скачан пользователем {message.from_user.first_name} {message.from_user.last_name} - id {message.from_user.id}\n")
                     self.download_document(doc, message.from_user.id)
-                    document = open(f'./documents_output/{doc}.xml')
-                    self.send_document(message.from_user.id, document)
-                    os.remove(f'./documents_output/{doc}.xml')
+                    document = open(f'./docs/documents_output/{doc}.xml')
+                    self.bot.send_document(message.from_user.id, document)
+                    os.remove(f'./docs/documents_output/{doc}.xml')
             except ValueError as exc:
                 self.bot.send_message(exc.args[1], exc.args[0])
 
@@ -172,11 +174,12 @@ class ECC_telegram_bot:
             self.load_duty_and_users()
             self.commands()
             self.start_hpsm_checker()
-            self.bot.send_message("1739060486", "Бот запущен")
+            self.bot.send_message(ECC_CHAT_ID, "Бот запущен")
             self.bot.polling(none_stop=True, interval=0, timeout=20)        
         except Exception as exc:
+            print(exc)
             with open('t_bot.log', 'a', encoding='utf8') as t_bot_log:
-                t_bot_log.write(exc)
+                t_bot_log.write(",".join(str(arg) for arg in exc.args)+"\n")
             self.restart_bot()
 
 
