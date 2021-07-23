@@ -3,8 +3,7 @@ import time
 import telebot
 import json
 import datetime
-import config
-
+from config import *
 
 class HpsmChecker:
     """
@@ -162,5 +161,5 @@ class HpsmChecker:
 
 if __name__ == '__main__':
 
-    checker = HpsmChecker(user_login='MeleshenkovI', user_password='Boradori4040', bot_token=config.BOT_TOKEN, cycle_check_time = config.CHECK_TIME )
+    checker = HpsmChecker(user_login=HPSM_USER, user_password=HPSM_PASS, bot_token=TG_BOT_TOKEN, cycle_check_time = HPSM_CHECK_TIME )
     checker.run()
