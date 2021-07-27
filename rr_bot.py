@@ -106,13 +106,15 @@ class HpsmChecker:
         hours = int(work_hours.strftime("%H"))
         minutes = int(work_hours.strftime("%M"))
         self.last_tickets_check = f'{hours:02d}:{minutes:02d}'
-        if hours >= 10 and hours <= 22:
+        if hours >= 10 and hours < 22:
             return True
         return False
 
    
     def send_notification(self, ticket_id):
-        self.bot.send_message(self.group_id, f"Заявка [{ticket_id}](https://hpsm.emias.mos.ru/sm/index.do?lang=) не взята в работу!Вызываем ответственных:\n[{self.duty_engeneer['first_name']} {self.duty_engeneer['last_name']}](tg://user?id={self.duty_engeneer['t_id']})")
+        self.bot.send_message(self.group_id, f"""Заявка [{ticket_id}](https://hpsm.emias.mos.ru/sm/index.do?lang=) не взята в работу!Вызываем ответственных:
+[{self.duty_engeneer['first_name']} {self.duty_engeneer['last_name']}](tg://user?id={self.duty_engeneer['t_id']})
+{DUTY_OWNER}""")
         self.bot.send_message(self.duty_engeneer['t_id'], f"Заявка [{ticket_id}](https://hpsm.emias.mos.ru/sm/index.do?lang=) не взята в работу!")
 
     
@@ -130,21 +132,33 @@ class HpsmChecker:
             json.dump({"check_time":self.last_tickets_check,"tickets_count":ticket_counter}, json_file, ensure_ascii=False)
         self.rr_tickets_count = 0
 
+
     def rr_time(self):
         current_hour = datetime.datetime.now().strftime("%H")
         current_min = datetime.datetime.now().strftime("%M")
-        if int(current_hour) == 10 and self.morning_notification == False:
-            # self.bot.send_message(self.group_id, f"[{self.duty_engeneer['first_name']} {self.duty_engeneer['last_name']}](tg://user?id={self.duty_engeneer['t_id']}) Время брать РРки!")
-            self.morning_notification = True
-            self.evening_notification = False
-        elif int(current_hour) == 17 and self.evening_notification == False:
-            # self.bot.send_message(self.group_id, f"Эй! [{self.duty_engeneer['first_name']} {self.duty_engeneer['last_name']}](tg://user?id={self.duty_engeneer['t_id']}) Время выполнять РР!")
-            self.morning_notification = False
-            self.evening_notification = True
-        
-        if int(current_hour) == 17 and int(current_min) > 30 and self.rr_tickets_count != 0:
-            print("enter if")
-            self.bot.send_message(self.group_id,f"Внимание кол-во не закрытых РР - {self.rr_tickets_count}!")
+        week_day = datetime.datetime.today().weekday()
+        if week_day != 6:
+            if int(current_hour) == 10 and int(current_min) < 11 and self.morning_notification == False :
+                self.bot.send_message(self.group_id, f"[{self.duty_engeneer['first_name']} {self.duty_engeneer['last_name']}](tg://user?id={self.duty_engeneer['t_id']}) Время брать РРки!")
+                self.morning_notification = True
+                self.evening_notification = False
+            elif int(current_hour) == 17 and int(current_min) < 11 and self.evening_notification == False:
+                self.bot.send_message(self.group_id, f"Эй! [{self.duty_engeneer['first_name']} {self.duty_engeneer['last_name']}](tg://user?id={self.duty_engeneer['t_id']}) Время выполнять РР!")
+                self.morning_notification = False
+                self.evening_notification = True
+            
+            if int(current_hour) == 17 and int(current_min) > 30 and self.rr_tickets_count != 0:
+                self.bot.send_message(self.group_id,f"Внимание кол-во не закрытых РР - {self.rr_tickets_count}!")
+        else:
+            if int(current_hour) == 10 and self.morning_notification == False :
+                self.bot.send_message(self.group_id, f"Сегодня воскресенье, РР нет.")
+                self.morning_notification = True
+                self.evening_notification = False
+            elif int(current_hour) == 17 and self.evening_notification == False:
+                self.bot.send_message(self.group_id, f"Эй! [{self.duty_engeneer['first_name']} {self.duty_engeneer['last_name']}](tg://user?id={self.duty_engeneer['t_id']}) Сегодня не делаешь РР, возрадуйся!")
+                self.morning_notification = False
+                self.evening_notification = True
+
 
     def run(self):
         try:
@@ -158,12 +172,12 @@ class HpsmChecker:
                     self.rr_time()
                     time.sleep(int(self.cycle_check_time))
                 else:
-                    time.sleep(1800)
+                    time.sleep(600)
         except Exception as e:
             self.bot.send_message(ECC_CHAT_ID, f"Я сломался {e.args}")
 
 
 if __name__ == '__main__':
 
-    checker = HpsmChecker(user_login=HPSM_USER, user_password=HPSM_PASS, bot_token=TG_BOT_TOKEN, cycle_check_time = HPSM_CHECK_TIME, group_id=ECC_CHAT_ID)
+    checker = HpsmChecker(user_login = HPSM_USER, user_password = HPSM_PASS, bot_token = TG_BOT_TOKEN, cycle_check_time = HPSM_CHECK_TIME, group_id = ECC_CHAT_ID)
     checker.run()

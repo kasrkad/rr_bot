@@ -112,14 +112,15 @@ class ECC_telegram_bot:
                 handler = Cct_message_handler_loader(self.bot)
                 handler.target_stand_set(message)
             except ValueError as valexc:
-                self.bot.reply_to(message,valexc.args[0])
+                print(valexc)
+                self.bot.reply_to(message,"some shit was happen")
                         
         @self.bot.message_handler(commands=['перенеси'])
         def load_artifact(message):
             try:
                 self.check_permission(message)
                 handler = Cct_message_hander_mover(self.bot)
-                handler.target_stand_set(message)
+                handler.source_stand_set(message)
             except ValueError as valexc:
                 self.bot.reply_to(message,valexc.args[0])
 
@@ -161,11 +162,13 @@ class ECC_telegram_bot:
 
         @self.bot.message_handler(commands=['help'])
         def help_print(message):
-            self.bot.send_message(message.from_user.id,"""/help - покажу это сообщение,
+            self.bot.reply_to(message,"""/help - покажу это сообщение,
 /дежурю - регистрирую как дежурного, переключаю телефон на дежурного,
 /status - покажу дежурного и статус заявок,
 /загрузи - грузим на стенд из списка сст по коммиту,
-/перенеси - перенос сст со стенда на стенд""")
+/перенеси - перенос сст со стенда на стенд
+Пришли мне текст с ID документа SIMI, скачаю и отправлю его в ответ.
+""")
 
         @self.bot.message_handler(commands=['restart'])
         def restart(message):
