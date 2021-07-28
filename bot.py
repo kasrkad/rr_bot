@@ -134,7 +134,7 @@ class ECC_telegram_bot:
                         self.bot.reply_to(message, f'''Дежурный - [{self.duty_engeneer["first_name"]} {self.duty_engeneer["last_name"]}](tg://user?id={self.duty_engeneer["t_id"]}).
 Последняя проверка - {check_status["check_time"]}.
 Кол-во активных заявок - {check_status["tickets_count"]}.
-Время между проверками заявок {int(HPSM_CHECK_TIME)//60} мин.
+Время между проверками заявок {int(HPSM_CHECK_INTERVAL_SECONDS)//60} мин.
                               ''')
                 else:
                     self.bot.reply_to(message, "Невозможно получить данные о последней проверке, возможно необходим перезапуск.")

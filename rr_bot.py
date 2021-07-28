@@ -95,7 +95,7 @@ class HpsmChecker:
         data_dict = json.loads(raw_tickets)
         data_dict = data_dict["model"]["instance"]
         for row in data_dict:
-            if row["record_id"].startswith("RF"):
+            if row["record_id"].startswith("RF") or row["record_id"].startswith("IM"):
                 tickets_for_check.append({"record_id":row["record_id"], "description":row["description"].strip(), "status": row["status"], "group":row["group"], "itemType": row["itemType"],
                 "assignee": row["assignee"], "priotity": row["priority"], "sla": row["em_next_ola_breach"]})
         return tickets_for_check    
@@ -175,9 +175,10 @@ class HpsmChecker:
                     time.sleep(600)
         except Exception as e:
             self.bot.send_message(ECC_CHAT_ID, f"Я сломался {e.args}")
+            print(e)
 
 
 if __name__ == '__main__':
 
-    checker = HpsmChecker(user_login = HPSM_USER, user_password = HPSM_PASS, bot_token = TG_BOT_TOKEN, cycle_check_time = HPSM_CHECK_TIME, group_id = ECC_CHAT_ID)
+    checker = HpsmChecker(user_login = HPSM_USER, user_password = HPSM_PASS, bot_token = TG_BOT_TOKEN, cycle_check_time = HPSM_CHECK_INTERVAL_SECONDS, group_id = ECC_CHAT_ID)
     checker.run()
