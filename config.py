@@ -1,6 +1,26 @@
 #!/bin/python3
 import os
 
+#Настройки для пересоздания ЕСУ_Продюсера
+PRODUCER_SOAP_USER = os.getenv('PRODUCER_SOAP_USER')
+PRODUCER_SOAP_PASS = os.getenv('PRODUCER_SOAP_PASS')
+SIMI_DNS_NAME_ENDPOINT_TEMPLATE = os.getenv('SIMI_DNS_NAME_ENDPOINT_TEMPLATE')
+SIMIP3_DNS_NAME_ENDPOINT_TEMPLATE = os.getenv('SIMIP3_DNS_NAME_ENDPOINT_TEMPLATE')
+
+PRODUCER_REQUEST = '''<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ru="ru.emias.simi.v2.api.diagnostic.v1">
+      <soapenv:Header>
+      <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+         <wsse:UsernameToken wsu:Id="UsernameToken-50">
+            <wsse:Username>{soap_name}</wsse:Username>
+            <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">{soap_pass}</wsse:Password>
+         </wsse:UsernameToken>
+      </wsse:Security>
+   </soapenv:Header>
+   <soapenv:Body>
+      <ru:recreateEsuProducer/>
+   </soapenv:Body>
+</soapenv:Envelope>'''
+
 #Настройки доступа до Репозитория ССТ
 SIMI_DOC_REPO_FOLDER = os.getenv('SIMI_DOC_REPO_FOLDER')
 SIMI_DOC_REPO_USER = os.getenv('SIMI_DOC_REPO_USER')
@@ -11,12 +31,12 @@ SIMI_DOC_REPO_URL = os.getenv('SIMI_DOC_REPO_URL')
 HTTP_PROXY = os.getenv('HTTP_PROXY')
 HPSM_USER = os.getenv('HPSM_USER')
 HPSM_PASS = os.getenv('HPSM_PASS')
-HPSM_CHECK_TIME = os.getenv('HPSM_CHECK_TIME')
+HPSM_CHECK_INTERVAL_SECONDS = os.getenv('HPSM_CHECK_INTERVAL_SECONDS')
 #Настройки бота
 ECC_CHAT_ID = os.getenv('ECC_CHAT_ID')
 TEST_STAND_GROUP_ID = os.getenv('TEST_STAND_GROUP_ID')
 MPAK_GROUP_ID = os.getenv('MPAK_GROUP_ID')
-TG_BOT_TOKEN = os.getenv('TG_BOT_TOKEN')
+TG_BOT_TOKEN = '1251562956:AAEEq1GuShlLsESY55Z7PVmPNgUH-geurFk' #os.getenv('TG_BOT_TOKEN')
 #Настройки скачивания документов
 PPAK_SOAP_URL = os.getenv('PPAK_SOAP_URL')
 PPAK_SOAP_USER = os.getenv('PPAK_SOAP_USER')
@@ -52,6 +72,19 @@ PREDPPAK_READ_SIMI_IP = os.getenv('PREDPPAK_READ_SIMI_IP')
 TPAK_DOC_CONNECTION_STRING = os.getenv('TPAK_DOC_CONNECTION_STRING')
 TPAK_BE_IP = os.getenv('TPAK_BE_IP')
 TPAK_SIMI_IP = os.getenv('TPAK_SIMI_IP')
+#Настройки для офисных стендов
+#75
+BE_IP_75 = os.getenv('BE_IP_75')
+ORACLE_75 = os.getenv('ORACLE_75')
+SIMI_IP_75 = os.getenv('SIMI_IP_75')
+#71
+BE_IP_71 = os.getenv('BE_IP_71')
+ORACLE_71 = os.getenv('ORACLE_71')
+SIMI_IP_71 = os.getenv('SIMI_IP_71')
+#73
+BE_IP_73 = os.getenv('BE_IP_73')
+ORACLE_73 = os.getenv('ORACLE_73')
+SIMI_IP_73 = os.getenv('SIMI_IP_73')
 
 
 #Для валидации строки с артефактами загрузки в ДЕВ
@@ -106,6 +139,40 @@ ASTERISK_GROUP = 'https://pbx/config.php?display=ringgroups&extdisplay=GRP-627'
 ASTERSK_HEADERS = {'Referer':'https://pbx/config.php?display=ringgroups&extdisplay=GRP-627'}
 
 ASTERISK_LOGIN = {"input_user": ASTERISK_LOGIN, "input_pass": ASTERISK_PASS, "submit_login": "Submit"}
+STAND_75 = {
+    "75":[
+    f'--document-registry-url jdbc:oracle:thin:@{ORACLE_75}',
+	f'--document-registry-username {DEFAULT_ORACLE_USER}',
+	f'--document-registry-password {DEFAULT_ORACLE_PASS}',
+	f'--think-ehr-rest-url http://{BE_IP_75}:8081',
+	f'--think-ehr-rest-username {READ_MARAND_USER}',
+	f'--think-ehr-rest-password {READ_MARAND_PASS} ',
+	f'--simi-diagnostics-web-service-v1-url http://{SIMI_IP_75}:8080/Simi2Soap/DiagnosticsWebService/v1/Endpoint?wsdl'
+    ]
+}
+
+STAND_71 = {
+    "71":[
+    f'--document-registry-url jdbc:oracle:thin:@{ORACLE_71}',
+	f'--document-registry-username {DEFAULT_ORACLE_USER}',
+	f'--document-registry-password {DEFAULT_ORACLE_PASS}',
+	f'--think-ehr-rest-url http://{BE_IP_71}:8081',
+	f'--think-ehr-rest-username {READ_MARAND_USER}',
+	f'--think-ehr-rest-password {READ_MARAND_PASS} ',
+	f'--simi-diagnostics-web-service-v1-url http://{SIMI_IP_71}:8080/Simi2Soap/DiagnosticsWebService/v1/Endpoint?wsdl'
+    ]
+}
+STAND_73 = {
+    "73":[
+    f'--document-registry-url jdbc:oracle:thin:@{ORACLE_73}',
+	f'--document-registry-username {DEFAULT_ORACLE_USER}',
+	f'--document-registry-password {DEFAULT_ORACLE_PASS}',
+	f'--think-ehr-rest-url http://{BE_IP_73}:8081',
+	f'--think-ehr-rest-username {READ_MARAND_USER}',
+	f'--think-ehr-rest-password {READ_MARAND_PASS} ',
+	f'--simi-diagnostics-web-service-v1-url http://{SIMI_IP_73}:8080/Simi2Soap/DiagnosticsWebService/v1/Endpoint?wsdl'
+    ]
+}
 
 
 mpak = {
@@ -125,7 +192,7 @@ dev = {"dev": [
 	f'--document-registry-username {DEFAULT_ORACLE_USER}',
 	f'--document-registry-password {DEFAULT_ORACLE_PASS}',
 	f'--think-ehr-rest-url http://{DEV_BE_IP}:8081 ',
-	f'--think-ehr-rest-username {DEFAULT_MARAND_USER} '
+	f'--think-ehr-rest-username {DEFAULT_MARAND_USER} ',
 	f'--think-ehr-rest-password {DEFAULT_MARAND_PASS}',
 	f'--simi-diagnostics-web-service-v1-url http://{DEV_SIMI_IP}:8080/Simi2Soap/DiagnosticsWebService/v1/Endpoint?wsdl',
 ]
@@ -134,10 +201,10 @@ dev = {"dev": [
 	f'--document-registry-url jdbc:oracle:thin:@{DEV_READ_DOC_CONNECTION_STRING}',
 	f'--document-registry-username {DEFAULT_ORACLE_USER}',
 	f'--document-registry-password {DEFAULT_ORACLE_PASS}',
-	f'--think-ehr-rest-url http://{DEV_READ_BE_IP}:8081',
-	f'--think-ehr-rest-username {READ_MARAND_USER}',
+	f'--think-ehr-rest-url http://{DEV_READ_BE_IP}:8081 ',
+	f'--think-ehr-rest-username {READ_MARAND_USER} ',
 	f'--think-ehr-rest-password {READ_MARAND_PASS}',
-	f'--simi-diagnostics-web-service-v1-url http://:{DEV_READ_SIMI_IP}:8080/Simi2Soap/DiagnosticsWebService/v1/Endpoint?wsdl',
+	f'--simi-diagnostics-web-service-v1-url http://{DEV_READ_SIMI_IP}:8080/Simi2Soap/DiagnosticsWebService/v1/Endpoint?wsdl',
 ]
 }
 
@@ -176,4 +243,5 @@ tpak = {
 }
 
 
-stand_list = {"dev": dev, "predppak": predppak, "tpak":tpak, "mpak": mpak}
+stand_list = {"dev": dev, "predppak": predppak, "tpak":tpak, "mpak": mpak, "73": STAND_73, "75":STAND_75, "71":STAND_71}
+

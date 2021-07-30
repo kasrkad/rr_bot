@@ -64,7 +64,21 @@ class ECC_telegram_bot:
         with open("./docs/documents_output/" + id_ + ".xml", "wb+") as id_file:
             id_file.write(response.text.encode('utf-8').strip())
     
-    
+
+    def producer_recreate(self):
+        body = PRODUCER_REQUEST.format(soap_name=PRODUCER_SOAP_USER, soap_pass=PRODUCER_SOAP_PASS)
+        headers = {'content-type': 'text/xml'}
+        for num in range(1,13):
+            url = SIMI_DNS_NAME_ENDPOINT_TEMPLATE.format(i=num)
+            response = requests.post(url, data=body, headers=headers)
+            if response.status_code != 200:
+                raise ValueError(f'На узле {url} не удалось пересоздать продюсер')
+        for num in range(1,3):
+            url = SIMIP3_DNS_NAME_ENDPOINT_TEMPLATE.format(i=num)
+            response = requests.post(url, data=body, headers=headers)
+            if response.status_code != 200:
+                raise ValueError(f'На узле {url} не удалось пересоздать продюсер')
+
     def start_hpsm_checker(self):
         """
         Запускает в отдельном процессе отслеживание заявок в HPSM
@@ -104,6 +118,17 @@ class ECC_telegram_bot:
         Вызывается чтобы подсунуть боту команды которые он должен обрабатывать
         """
 
+        @self.bot.message_handler(commands=['producer'])
+        def recreate_producer_on_all_nodes(message):
+            try:
+                self.check_permission(message)
+                self.bot.reply_to(message,"Запускаю пересоздание продюсеров.")
+                self.producer_recreate()
+                self.bot.reply_to(message, "Продюсеры пересозданы.")
+            except ValueError as valexc:
+                print(valexc)
+                self.bot.reply_to(message, valexc.args[0])
+
 
         @self.bot.message_handler(commands=['загрузи'])
         def load_artifact(message):
@@ -116,7 +141,7 @@ class ECC_telegram_bot:
                 self.bot.reply_to(message,"some shit was happen")
                         
         @self.bot.message_handler(commands=['перенеси'])
-        def load_artifact(message):
+        def move_artifact(message):
             try:
                 self.check_permission(message)
                 handler = Cct_message_hander_mover(self.bot)
@@ -166,7 +191,8 @@ class ECC_telegram_bot:
 /дежурю - регистрирую как дежурного, переключаю телефон на дежурного,
 /status - покажу дежурного и статус заявок,
 /загрузи - грузим на стенд из списка сст по коммиту,
-/перенеси - перенос сст со стенда на стенд
+/перенеси - перенос сст со стенда на стенд,
+/producer - отправлю запрос на пересоздание продюсера на всех узлах СИМИ.
 Пришли мне текст с ID документа SIMI, скачаю и отправлю его в ответ.
 """)
 
