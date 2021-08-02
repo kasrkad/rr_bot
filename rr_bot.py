@@ -62,7 +62,7 @@ class HpsmChecker:
         driver.find_element_by_id("LoginUsername").send_keys(self.user_login)
         driver.find_element_by_id("LoginPassword").send_keys(self.user_password)
         driver.find_element_by_id("loginBtn").click()
-        time.sleep(3)
+        time.sleep(4)
         driver.switch_to.frame(driver.find_element_by_tag_name('iframe'))
         hpsm_html_source = driver.page_source 
         driver.get('https://hpsm.emias.mos.ru/sm/goodbye.jsp?lang=')
@@ -88,14 +88,15 @@ class HpsmChecker:
         "_{_VALUE_}_cm3t",
         "_{_VALUE_}_Запланировано",
         "_{_VALUE_}_Assigneed",
-        "_{_VALUE_}_Выполняется"]
+        "_{_VALUE_}_Выполняется",
+        "_{_VALUE_}_Delayed"]
 
         for replace in replace_list:
             raw_tickets = raw_tickets.replace(replace,"")
         data_dict = json.loads(raw_tickets)
         data_dict = data_dict["model"]["instance"]
         for row in data_dict:
-            if row["record_id"].startswith("RF") or row["record_id"].startswith("IM"):
+            if row["record_id"].startswith("RF") or row["record_id"].startswith("IM") and row["status"] != "Отложен":
                 tickets_for_check.append({"record_id":row["record_id"], "description":row["description"].strip(), "status": row["status"], "group":row["group"], "itemType": row["itemType"],
                 "assignee": row["assignee"], "priotity": row["priority"], "sla": row["em_next_ola_breach"]})
         return tickets_for_check    
@@ -122,15 +123,14 @@ class HpsmChecker:
         rr_counter = 0
         ticket_counter = 0
         for ticket in self.tickets:
-            if ticket['status'] != 'В работе' and self.check_working_time():
-               self.send_notification(ticket["record_id"])
-            elif ticket['description'] in self.rr_list:
+            if ticket['status'] != 'В работе' and ticket['status'] != 'Отложен' and self.check_working_time():
+                self.send_notification(ticket["record_id"])
+            if ticket['description'] in self.rr_list:
                 rr_counter+=1
             ticket_counter+=1
         self.rr_tickets_count = rr_counter
         with open('last_check.json', 'w', encoding='utf8') as json_file:
             json.dump({"check_time":self.last_tickets_check,"tickets_count":ticket_counter}, json_file, ensure_ascii=False)
-        self.rr_tickets_count = 0
 
 
     def rr_time(self):
@@ -148,6 +148,7 @@ class HpsmChecker:
                 self.evening_notification = True
             
             if int(current_hour) == 17 and int(current_min) > 30 and self.rr_tickets_count != 0:
+                print(self.rr_tickets_count)
                 self.bot.send_message(self.group_id,f"Внимание кол-во не закрытых РР - {self.rr_tickets_count}!")
         else:
             if int(current_hour) == 10 and self.morning_notification == False :
@@ -168,7 +169,6 @@ class HpsmChecker:
                     html = self.get_tickets()
                     self.tickets = self.parse_html(html)
                     self.check_sla()
-                    print(self.rr_tickets_count)
                     self.rr_time()
                     time.sleep(int(self.cycle_check_time))
                 else:
