@@ -71,11 +71,13 @@ class ECC_telegram_bot:
         for num in range(1,13):
             url = SIMI_DNS_NAME_ENDPOINT_TEMPLATE.format(i=num)
             response = requests.post(url, data=body, headers=headers)
+            print(url, response.status_code)
             if response.status_code != 200:
                 raise ValueError(f'На узле {url} не удалось пересоздать продюсер')
         for num in range(1,3):
             url = SIMIP3_DNS_NAME_ENDPOINT_TEMPLATE.format(i=num)
             response = requests.post(url, data=body, headers=headers)
+            print(url, response.status_code)
             if response.status_code != 200:
                 raise ValueError(f'На узле {url} не удалось пересоздать продюсер')
 

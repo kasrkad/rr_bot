@@ -148,7 +148,6 @@ class HpsmChecker:
                 self.evening_notification = True
             
             if int(current_hour) == 17 and int(current_min) > 30 and self.rr_tickets_count != 0:
-                print(self.rr_tickets_count)
                 self.bot.send_message(self.group_id,f"Внимание кол-во не закрытых РР - {self.rr_tickets_count}!")
         else:
             if int(current_hour) == 10 and self.morning_notification == False :
@@ -172,7 +171,7 @@ class HpsmChecker:
                     self.rr_time()
                     time.sleep(int(self.cycle_check_time))
                 else:
-                    time.sleep(600)
+                    time.sleep(60)
         except Exception as e:
             self.bot.send_message(ECC_CHAT_ID, f"Я сломался {e.args}")
             print(e)
