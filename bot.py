@@ -7,6 +7,7 @@ from config import *
 from artifacts import *
 import re
 import requests
+from bs4 import BeautifulSoup
 
 
 class ECC_telegram_bot:
@@ -67,6 +68,7 @@ class ECC_telegram_bot:
 
     def producer_recreate(self):
         body = PRODUCER_REQUEST.format(soap_name=PRODUCER_SOAP_USER, soap_pass=PRODUCER_SOAP_PASS)
+        print("запрос на пересоздание продьюсера.")
         headers = {'content-type': 'text/xml'}
         for num in range(1,13):
             url = SIMI_DNS_NAME_ENDPOINT_TEMPLATE.format(i=num)
@@ -86,6 +88,24 @@ class ECC_telegram_bot:
         Запускает в отдельном процессе отслеживание заявок в HPSM
         """
         self.hpsm_checker = Popen(['python3','rr_bot.py'], stdout=PIPE, stderr=PIPE)
+
+
+    def check_subscription(self, subscription_name):
+        headers = {'content-type': 'text/xml'}
+        subscription_request_body = SUBSCRIPTION_REQUEST.format(soap_user= PRODUCER_SOAP_USER, soap_pass=PRODUCER_SOAP_PASS, name = subscription_name)
+        response = requests.post(SUBSCRIPTION_SOAP_URL, data=subscription_request_body, headers=headers)
+        xml = BeautifulSoup(response.text, 'xml')
+        xml.find('soap:Body') 
+        sub_id = xml.find('subscription')
+        if sub_id:
+        	expression = xml.find('evaluationExpression')
+        	attributes = xml.find_all('attributeSelector')
+	        with open(f'./subscription/{subscription_name}.xml', 'w', encoding='utf8') as sub_file:
+        		sub_file.write(SUBSCRIPTION_TEMPLATE.format(soap_user=PRODUCER_SOAP_USER, soap_pass=PRODUCER_SOAP_PASS,name=sub_id.attrs['name'],topic=sub_id.attrs['destinationTopic'],
+                expression=expression.contents[0].replace('&','&amp;'),attr_selector=''.join(f'{attr}\n' for attr in attributes)))
+        else:
+            raise ValueError(f"Подписка {subscription_name} не обнаружена")
+
 
 
     def change_duty_phone(self, t_id):
@@ -205,9 +225,22 @@ class ECC_telegram_bot:
                 self.bot.reply_to(message,"Бот перезапускается")
                 self.restart_bot()
             except ValueError as exc:
-                self.bot.reply_to(exc.args[0])
+                self.bot.reply_to(message,exc.args[0])
             except Exception as others:
                 print(others)
+
+
+        @self.bot.message_handler(commands=['подписка'])
+        def download_subscription_xml(message):
+            try:
+                self.check_permission(message)
+                command, sub_name = message.text.strip().split(' ', 1)
+                self.check_subscription(sub_name)
+                subscription_file = open(f'./subscription/{sub_name}.xml')
+                self.bot.send_document(message.from_user.id, subscription_file)
+                os.remove(f'./subscription/{sub_name}.xml')
+            except ValueError as exc:
+                self.bot.reply_to(message, exc.args[0])
 
 
         @self.bot.message_handler(regexp=self.document_download_pattern)
