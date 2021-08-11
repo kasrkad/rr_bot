@@ -81,6 +81,7 @@ class Cct_message_handler_loader:
 		else:
 			if self.validate_stand(message):
 				self.message_with_target_stand = message
+				self.dump_settings["eng_id"] = message.from_user.id
 				self.load_settings["eng_id"] = message.from_user.id
 				self.load_settings["stand"] = message.text.strip().lower()
 				msg = self.bot.reply_to(message, "Введите task simicli.\n Пример: 78751,78634;cct,vis")
