@@ -1,11 +1,14 @@
 #!/bin/python3
 import os
 
+DUTY_OWNER = '[Александр Бауман](tg://user?id=753785354)'
+
+
 #Настройки для пересоздания ЕСУ_Продюсера
 PRODUCER_SOAP_USER = os.getenv('PRODUCER_SOAP_USER')
 PRODUCER_SOAP_PASS = os.getenv('PRODUCER_SOAP_PASS')
 SIMI_DNS_NAME_ENDPOINT_TEMPLATE = os.getenv('SIMI_DNS_NAME_ENDPOINT_TEMPLATE')
-SIMIP3_DNS_NAME_ENDPOINT_TEMPLATE = os.getenv('SIMIP3_DNS_NAME_ENDPOINT_TEMPLATE')
+SIMIP3_DNS_NAME_ENDPOINT_TEMPLATE = os.getenv('SIMIP3_DNS_NAME_ENDPOINT_TEMPLATE') #Асинхронные узлы
 
 PRODUCER_REQUEST = '''<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ru="ru.emias.simi.v2.api.diagnostic.v1">
       <soapenv:Header>
@@ -21,11 +24,13 @@ PRODUCER_REQUEST = '''<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.or
    </soapenv:Body>
 </soapenv:Envelope>'''
 
+
 #Настройки доступа до Репозитория ССТ
 SIMI_DOC_REPO_FOLDER = os.getenv('SIMI_DOC_REPO_FOLDER')
 SIMI_DOC_REPO_USER = os.getenv('SIMI_DOC_REPO_USER')
 SIMI_DOC_REPO_PASS = os.getenv('SIMI_DOC_REPO_PASS')
 SIMI_DOC_REPO_URL = os.getenv('SIMI_DOC_REPO_URL')
+
 
 #HPSM настройки
 HTTP_PROXY = os.getenv('HTTP_PROXY')
@@ -37,13 +42,119 @@ ECC_CHAT_ID = os.getenv('ECC_CHAT_ID')
 TEST_STAND_GROUP_ID = os.getenv('TEST_STAND_GROUP_ID')
 MPAK_GROUP_ID = os.getenv('MPAK_GROUP_ID')
 TG_BOT_TOKEN = os.getenv('TG_BOT_TOKEN')
+
+
+#Для скачивания подписки
+SUBSCRIPTION_SOAP_URL = os.getenv('SUBSCRIPTION_SOAP_URL')
+
+
+SUBSCRIPTION_REQUEST = """
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:typ="http://emias.mos.ru/simi/v1/subscriptionService/types" xmlns:core="http://emias.mos.ru/simi/core">
+   <soapenv:Header>
+      <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+         <wsse:UsernameToken wsu:Id="UsernameToken-50">
+            <wsse:Username>{soap_user}</wsse:Username>
+            <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">{soap_pass}</wsse:Password>
+         </wsse:UsernameToken>
+      </wsse:Security>
+   </soapenv:Header>
+   <soapenv:Body>
+      <typ:search>
+         <params>
+            <typ:conditions>
+               <typ:condition operator="EQ">
+                  <typ:leftOperand>NAME</typ:leftOperand>
+                  <typ:rightOperand>{name}</typ:rightOperand>
+               </typ:condition>
+            </typ:conditions>
+         </params>
+      </typ:search>
+   </soapenv:Body>
+</soapenv:Envelope>
+"""
+
+
+SUBSCRIPTION_TEMPLATE = """
+	<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:typ="http://emias.mos.ru/simi/v1/subscriptionService/types">
+	   <soapenv:Header>
+	      <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+	         <wsse:UsernameToken wsu:Id="UsernameToken-50">
+	            <wsse:Username>{soap_user}</wsse:Username>
+	            <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">{soap_pass}</wsse:Password>
+	         </wsse:UsernameToken>
+	      </wsse:Security>
+	   </soapenv:Header>
+	   <soapenv:Body>
+	      <typ:subscribe>
+	         <name>{name}</name>
+	         <destinationTopic>{topic}</destinationTopic>
+	         <evaluationExpression>{expression}</evaluationExpression>
+			 {attr_selector}
+	      </typ:subscribe>
+	   </soapenv:Body>
+	</soapenv:Envelope>"""
+
+
 #Настройки скачивания документов
 PPAK_SOAP_URL = os.getenv('PPAK_SOAP_URL')
 PPAK_SOAP_USER = os.getenv('PPAK_SOAP_USER')
+
+REQUEST_BODY = """<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:user="http://emias.mos.ru/system/v1/userContext/" xmlns:typ="http://emias.mos.ru/simi/simiService/v5/types/" xmlns:v5="http://emias.mos.ru/simi/document/v5/" xmlns:v51="http://emias.mos.ru/simi/core/v5/">
+   <soap:Header>
+    <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+        <wsse:UsernameToken wsu:Id="UsernameToken-50">
+            <wsse:Username>{PPAK_SOAP_USER}</wsse:Username>           
+        </wsse:UsernameToken>
+    </wsse:Security>
+    <user:userContext>
+        <user:systemName>SIMI</user:systemName>
+        <user:userName>simi_support/tg:{tg}</user:userName>
+        <user:userRoleId>1</user:userRoleId>
+    </user:userContext>
+</soap:Header>
+   <soap:Body>
+      <typ:getDocumentRequest>
+         <v5:documentId>{id}</v5:documentId>
+         <!--Optional:-->
+            </typ:getDocumentRequest>
+   </soap:Body>
+</soap:Envelope>"""
+
 #Настройки доступа до астериска для смены номера
 ASTERISK_LOGIN = os.getenv('ASTERISK_LOGIN')
 ASTERISK_PASS = os.getenv('ASTERISK_PASS')
-#Настройки стендов для работы с ССТ
+ASTERISK_PAYLOAD = {
+"display": "ringgroups",
+"action": "edtGRP",
+"account": "627",
+"description": "EMIAS-duty",
+"strategy": "ringall",
+"grptime": "20",
+"annmsg_id": None,
+"ringing": "Ring",
+"grppre": None,
+"alertinfo": None,
+"remotealert_id": None,
+"toolate_id": None,
+"changecid": "default",
+"recording": "dontcare",
+"goto0": "Ring_Groups",
+"Ring_Groups0": "ext-group,628,1",
+"Submit": "Submit Changes"
+}
+
+ASTERISK_GROUP = 'https://pbx/config.php?display=ringgroups&extdisplay=GRP-627'
+
+ASTERSK_HEADERS = {'Referer':'https://pbx/config.php?display=ringgroups&extdisplay=GRP-627'}
+
+ASTERISK_LOGIN = {"input_user": ASTERISK_LOGIN, "input_pass": ASTERISK_PASS, "submit_login": "Submit"}
+
+#Настройки стендов и для работы с ССТ
+
+#Для валидации строки с артефактами загрузки
+CORRECT_ARTIFACTS = ['cct','vis','tmpl']
+
+#Настройки получения параметров стендов
 DEFAULT_ORACLE_USER = os.getenv('DEFAULT_ORACLE_USER')
 DEFAULT_ORACLE_PASS = os.getenv('DEFAULT_ORACLE_PASS')
 DEFAULT_MARAND_USER = os.getenv('DEFAULT_MARAND_USER')
@@ -86,59 +197,7 @@ BE_IP_73 = os.getenv('BE_IP_73')
 ORACLE_73 = os.getenv('ORACLE_73')
 SIMI_IP_73 = os.getenv('SIMI_IP_73')
 
-
-#Для валидации строки с артефактами загрузки в ДЕВ
-CORRECT_ARTIFACTS = ['cct','vis','tmpl']
-DUTY_OWNER = '[Александр Бауман](tg://user?id=753785354)'
-
-#Для скачивания документов
-
-REQUEST_BODY = """<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:user="http://emias.mos.ru/system/v1/userContext/" xmlns:typ="http://emias.mos.ru/simi/simiService/v5/types/" xmlns:v5="http://emias.mos.ru/simi/document/v5/" xmlns:v51="http://emias.mos.ru/simi/core/v5/">
-   <soap:Header>
-    <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
-        <wsse:UsernameToken wsu:Id="UsernameToken-50">
-            <wsse:Username>{PPAK_SOAP_USER}</wsse:Username>           
-        </wsse:UsernameToken>
-    </wsse:Security>
-    <user:userContext>
-        <user:systemName>SIMI</user:systemName>
-        <user:userName>simi_support/tg:{tg}</user:userName>
-        <user:userRoleId>1</user:userRoleId>
-    </user:userContext>
-</soap:Header>
-   <soap:Body>
-      <typ:getDocumentRequest>
-         <v5:documentId>{id}</v5:documentId>
-         <!--Optional:-->
-            </typ:getDocumentRequest>
-   </soap:Body>
-</soap:Envelope>"""
-
-ASTERISK_PAYLOAD = {
-"display": "ringgroups",
-"action": "edtGRP",
-"account": "627",
-"description": "EMIAS-duty",
-"strategy": "ringall",
-"grptime": "20",
-"annmsg_id": None,
-"ringing": "Ring",
-"grppre": None,
-"alertinfo": None,
-"remotealert_id": None,
-"toolate_id": None,
-"changecid": "default",
-"recording": "dontcare",
-"goto0": "Ring_Groups",
-"Ring_Groups0": "ext-group,628,1",
-"Submit": "Submit Changes"
-}
-
-ASTERISK_GROUP = 'https://pbx/config.php?display=ringgroups&extdisplay=GRP-627'
-
-ASTERSK_HEADERS = {'Referer':'https://pbx/config.php?display=ringgroups&extdisplay=GRP-627'}
-
-ASTERISK_LOGIN = {"input_user": ASTERISK_LOGIN, "input_pass": ASTERISK_PASS, "submit_login": "Submit"}
+#Шаблон параматров для утилиты загрузки
 STAND_75 = {
     "75":[
     f'--document-registry-url jdbc:oracle:thin:@{ORACLE_75}',
