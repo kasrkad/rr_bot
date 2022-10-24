@@ -48,8 +48,9 @@ def create_tables() ->None:
             cursor.execute(
                 """CREATE TABLE IF NOT EXISTS HPSM_STATUS (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, task INTEGER, rr_task INTEGER,  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)""")
             cursor.execute("""CREATE TABLE IF NOT EXISTS ARTIFACTS (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, TIMESTAMP DATETIME DEFAULT CURRENT_TIMESTAMP, ARTIFACT_TASK TEXT NOT NULL, STAND TEXT NOT NULL, ACTION TEXT NOT NULL,TASK_COMMIT TEXT, TG_ID INT NOT NULL, COMPLETE TEXT NOT NULL default NO)""")
+            cursor.execute(
+                """CREATE TABLE IF NOT EXISTS HPSM_STATUS (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, task INTEGER, rr_task INTEGER,  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)""")
             sqlite_logger.info("База данных успешно создана ")
-
     except Exception as exc:
         print(exc)
         sqlite_logger.error(
@@ -80,20 +81,19 @@ def return_phone_num_db(tg_id_for_get_phone):
     try:
         with SQLite() as cursor:
             sqlite_logger.info(f"Запрошен телефон для пользователя {tg_id_for_get_phone}")
-            cursor.execute("select phone_num from ADMIN_USERS where tg_id = {tg_id}")
-            return cursor.fetchall()[0]
+            cursor.execute(f"select phone_num from ADMIN_USERS where tg_id = {tg_id}")
+            return cursor.fetchone()[0]
     except Exception as exc:
         sqlite_logger.error(f"Произошла ошибка при запросе телефона для {tg_id_for_get_phone}", exc_info=True)
-        
-        
+
+
 def show_all_admin_db() -> dict:
     #Нужно будет переделать выбор админа или смотрящего за hpsm на inline keyboard
     try:
         with SQLite() as cursor:
             sqlite_logger.info("Запрошены все доступные администраторы")
-            cursor.execute("Select tg_id,fio from ADMIN_USERS")
-            sql_query_result = cursor.fetchall()
-            res = { num:f"{tg_id}:{fio}" for num, (tg_id,fio) in enumerate(dict(sql_query_result).items())}
+            query_result = cursor.execute("Select tg_id,fio from ADMIN_USERS")
+            res = { num:f"{tg_id}:{fio}" for num, (tg_id,fio) in enumerate(dict(query_result).items())}
             sqlite_logger.info("Администраторы отданы из бд")
             return res    
     except Exception as exc:
@@ -125,7 +125,7 @@ def check_admin_permissions(tg_id_for_check)-> bool:
         sqlite_logger.error(f"При проверке прав доступа пользователя {tg_id_for_check}",exc_info=True)
 
 
-def set_owner_or_duty(tg_id, role=duty):
+def set_owner_or_duty_db(tg_id, role='duty'):
     try:
         with SQLite() as cursor:
             sqlite_logger.info(f"Для пользователя {tg_id} устанавливается роль {role}")
@@ -136,12 +136,11 @@ def set_owner_or_duty(tg_id, role=duty):
         sqlite_logger.error(f"Произошла ошибка при установке роли-{role} для {tg_id}")
 
 
-def get_owner_or_duty(tg_id, role=duty)-> dict:
+def get_owner_or_duty_db(tg_id, role='duty')-> dict:
     try:
         with SQLite() as cursor:
             sqlite_logger.info(f"Запрошен текущий {role} из БД")
-            cursor.execute(f"SELECT tg_id, fio from ADMIN_USERS where {role}='YES'")
-            query_result = cursor.fetchone()
+            query_result = cursor.execute(f"SELECT tg_id, fio from ADMIN_USERS where {role}='YES'").fetchone()
             if query_result:
                 return {"tg_id":query_result[0],"fio":query_result[1]}
             return None
@@ -149,7 +148,7 @@ def get_owner_or_duty(tg_id, role=duty)-> dict:
         sqlite_logger.error(f"Произошла ошибка при запросе {role} из БД")
 
 
-def permissions_decorator(func_for_decorate):
+def permissions_decorator(func_for_decorate) -> func:
     
     def wrapper(message):
         if check_admin_permissions(message.from_user.id):
@@ -159,10 +158,27 @@ def permissions_decorator(func_for_decorate):
     return wrapper
 
 
+def write_hpsm_status_db(task_count = 0, rr_task_count = 0) -> bool:
+    try:
+        with SQLite() as cursor:
+            if cursor.execute("SELECT * FROM HPSM_STATUS").fetchone():
+                cursor.execute(
+                    f"UPDATE HPSM_STATUS SET task = {task_count} ,rr_task = {rr_task_count}, timestamp = strftime('%s','now') WHERE id = 1;")
+                return True
+            cursor.execute(
+            f"INSERT INTO HPSM_STATUS (task,rr_task,timestamp) VALUES ({task_count},{rr_task_count},strftime('%s','now'));")
+            return True
+    except Exception as exc:
+        sqlite_logger.error("Произошла ошибка при записи задач HPSM, в таблицу HPSM_STATUS", exc_info=True)
+        return False
 
 
-def main():
-    print(check_admin_permissions(2848131471))
-
-if __name__ == "__main__":
-    main()
+def get_hpsm_status_db() -> dict:
+    try:
+        with SQLite() as cursor:
+            query_result = cursor.execute("SELECT * FROM HPSM_STATUS").fetchall()
+            if query_result:
+                return {"tasks": query_result[0], "rr_task":query_result[1], "timestamp": query_result[2]}
+            return {"tasks": 0 , "rr_task":0, "timestamp": 0}
+    except Exception as exc:
+        sqlite_logger.error("Ошибка при получении статуса заявок HPSM")
