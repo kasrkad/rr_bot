@@ -1,4 +1,6 @@
 import requests
+from config import ASTERISK_LOGIN, ASTERISK_PASS
+
 
 asterisk_logger = logging.getLogger('asterisk_logger')
 asterisk_logger_formatter = logging.Formatter(
@@ -12,7 +14,7 @@ ASTERISK_GROUP = 'https://pbx/config.php?display=ringgroups&extdisplay=GRP-627'
 
 ASTERSK_HEADERS = {'Referer':'https://pbx/config.php?display=ringgroups&extdisplay=GRP-627'}
 
-ASTERISK_LOGIN = {"input_user": ASTERISK_LOGIN, "input_pass": ASTERISK_PASS, "submit_login": "Submit"}
+ASTERISK_LOGIN_DATA = {"input_user": ASTERISK_LOGIN, "input_pass": ASTERISK_PASS, "submit_login": "Submit"}
 
 ASTERISK_PAYLOAD = {
 "display": "ringgroups",
@@ -41,9 +43,9 @@ def set_duty_phone(str:phone_for_set):
         payload_for_set['grplist'] = f'phone_for_set'
         reload_asterisk_settings_data = {"handler": "reload"}
         request_session = request.Session()
-        auth = request_session.post('https://pbx/index.php',data=ASTERISK_LOGIN,
+        auth = request_session.post('https://pbx/index.php',data=ASTERISK_LOGIN_DATA,
                                     verify=False)
-        set_duty_phone_request = request_seesion.post(ASTERISK_GROUP, data=payload,cookies=r.cookies,
+        set_duty_phone_request = request_session.post(ASTERISK_GROUP, data=payload,cookies=r.cookies,
                                         headers=ASTERSK_HEADERS,
                                         verify=False,
                                         allow_redirects=True)
