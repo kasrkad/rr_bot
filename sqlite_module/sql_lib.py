@@ -22,13 +22,12 @@ sqlite_logger.addHandler(sqlite_logger_handler_file)
 sqlite_logger.addHandler(sqlite_logger_handler_stream)
 
 
-class SQLite():
+class SQLite:
     def __init__(self, file='botbase.db'):
         self.file = file
 
     def __enter__(self):
         self.conn = sqlite3.connect(self.file)
-        # self.conn.row_factory = sqlite3.Row
         sqlite_logger.info("Соединение с бд установлено")
         return self.conn.cursor()
 
