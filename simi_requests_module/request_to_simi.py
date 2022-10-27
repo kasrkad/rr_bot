@@ -103,11 +103,8 @@ def producer_recreate_request(producer_recreate_request) -> dict:
 
 
 def simi_document_request(request_to_simi, stand_node_adress, documents_ids=list, requester_tg_id=None) -> list:
-    if not os.path.exists("./docs/"):
-        os.mkdir("./docs/")
-
     request_to_simi_logger.info(f'Пользователем {requester_tg_id} запрошены документы {",".join(doc for doc in documents_ids)}.')
-    path_way_for_files = []
+    docs_with_content = {}
     for doc_id in documents_ids:
         try:
             request_body = request_to_simi.format(id=doc_id.strip(),
@@ -116,10 +113,34 @@ def simi_document_request(request_to_simi, stand_node_adress, documents_ids=list
             query_result = requests.post(stand_node_adress,
                                         data = request_body,
                                         headers =HEADERS)
-            with open("./docs/documents_output/" + doc_id + ".xml", "wb+") as id_file:
-                id_file.write(response.text.encode('utf-8').strip())
-            path_way_for_files.append(f'./docs/{doc_id}.xml')
+            if query_result.status_code == 200:
+                docs_with_content[doc_id.strip()] = query_result.text                
         except Exception as exc:
-            request_to_simi_logger.error(f"Произошла ошибка при работе с документами", exc_info=True)
-    
-    return path_way_for_files
+            request_to_simi_logger.error(f"Произошла ошибка при работе с документом {doc_id}", exc_info=True)
+    request_to_simi_logger.info(f'Документы переданы успешно {",".join(doc for doc in documents_ids)}.')
+    return docs_with_content
+
+
+
+
+def write_json_or_xml_document(doc_data = dict, file_format = 'xml'):
+    request_to_simi_logger.info(f'Записываем в {file_format} документы {",".join(doc_id for doc_id in doc_data.keys())}.')
+    os.makedirs('./docs_xml/', exist_ok=True)
+    os.makedirs('./docs_json/', exist_ok=True)
+    path_way_for_files = []
+    for doc_id, doc_content in doc_data.items():
+        try:
+            if file_format == 'xml':
+                with open(f"./docs_xml/documents_output/{doc_id}.xml", "wb+") as id_file:
+                    id_file.write(doc_content.encode('utf-8').strip())
+                path_way_for_files.append(f'./docs_xml/{doc_id}.xml')
+            elif file_format == 'json':
+                with open(f"./docs_json/{doc_id}.json", "w") as json_for_write:
+                    json.dump(json_for_write,doc_content, ensure_ascii=False , indent=2)
+                path_way_for_files.append(f'./docs_json/{doc_id}.json')
+        except Exception as exc:
+            request_to_simi_logger.info(f'Произошла ошибка при записи документа {doc_id} в формате {file_format}.')
+    return path_way_for_files 
+
+def base64_decode_to_json(doc_data = dict):
+    pass
