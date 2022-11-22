@@ -43,7 +43,7 @@ def create_tables() ->None:
     try:
         with SQLite() as cursor:
             cursor.execute(
-                """CREATE TABLE IF NOT EXISTS SYSTEM_NOTIFY (NOTIFY_NAME TEXT UNIQUE,NOTIFY_TIME TEXT,NOTIFY_WORK_DAY TEXT,NOTIFY_MESSAGE TEXT,STATUS TEXT default False)""")
+                """CREATE TABLE IF NOT EXISTS SYSTEM_NOTIFY (NOTIFY_NAME TEXT UNIQUE,NOTIFY_TIME TEXT,NOTIFY_WORK_DAY TEXT,NOTIFY_MESSAGE TEXT,NOTIFY_TARGET TEXT default system ,STATUS TEXT default False)""")
             cursor.execute(
                 """CREATE TABLE IF NOT EXISTS ADMIN_USERS (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, tg_id INT NOT NULL UNIQUE, fio TEXT NOT NULL, phone_num TEXT, duty TEXT default NO, owner TEXT default NO)""")
             cursor.execute(
@@ -57,12 +57,13 @@ def create_tables() ->None:
         sqlite_logger.error(
             "Произошла ошибка при создании таблиц", exc_info=True)
 
-def insert_nofity(notify_name=str) -> None:
+def insert_nofity(notify_name=str, notify_time=str, notify_work_day=str, notify_message=str, notify_target = "system") -> None:
     try:
         sqlite_logger.info(f'Добавляем уведомления с именем {notify_name}')
         with SQLite() as cursor:
             cursor.execute(
-                f"""INSERT INTO NOTIFY_FLAGS(NOTIFY_NAME) VALUES ('{notify_name}')""")
+                f"""INSERT INTO SYSTEM_NOTIFY(NOTIFY_NAME,NOTIFY_TIME,NOTIFY_WORK_DAY,NOTIFY_MESSAGE,NOTIFY_TARGET)
+                    VALUES ('{notify_name}','{notify_time}','{notify_work_day}','{notify_message}','{notify_target}')""")
         sqlite_logger.info(f'Уведомление {notify_name} добавлено')
     except Exception as exc:
         sqlite_logger.error(

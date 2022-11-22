@@ -8,3 +8,6 @@ __pycache__
 bot_functions.py
 export_env.sh
 *.log
+standards_notify.json
+test.py
+admins.json

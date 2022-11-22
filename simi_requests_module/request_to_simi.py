@@ -102,7 +102,7 @@ def producer_recreate_request(producer_recreate_request) -> dict:
     return request_nodes_result
 
 
-def simi_document_request(request_to_simi, stand_node_adress, documents_ids=list, requester_tg_id=None) -> list:
+def simi_document_request(request_to_simi, stand_node_adress, documents_ids=list, requester_tg_id=None) -> dict:
     request_to_simi_logger.info(f'Пользователем {requester_tg_id} запрошены документы {",".join(doc for doc in documents_ids)}.')
     docs_with_content = {}
     for doc_id in documents_ids:
@@ -121,8 +121,6 @@ def simi_document_request(request_to_simi, stand_node_adress, documents_ids=list
     return docs_with_content
 
 
-
-
 def write_json_or_xml_document(doc_data = dict, file_format = 'xml'):
     request_to_simi_logger.info(f'Записываем в {file_format} документы {",".join(doc_id for doc_id in doc_data.keys())}.')
     os.makedirs('./docs_xml/', exist_ok=True)
@@ -131,7 +129,7 @@ def write_json_or_xml_document(doc_data = dict, file_format = 'xml'):
     for doc_id, doc_content in doc_data.items():
         try:
             if file_format == 'xml':
-                with open(f"./docs_xml/documents_output/{doc_id}.xml", "wb+") as id_file:
+                with open(f"./docs_xml/{doc_id}.xml", "wb+") as id_file:
                     id_file.write(doc_content.encode('utf-8').strip())
                 path_way_for_files.append(f'./docs_xml/{doc_id}.xml')
             elif file_format == 'json':
@@ -141,6 +139,7 @@ def write_json_or_xml_document(doc_data = dict, file_format = 'xml'):
         except Exception as exc:
             request_to_simi_logger.info(f'Произошла ошибка при записи документа {doc_id} в формате {file_format}.')
     return path_way_for_files 
+
 
 def base64_decode_to_json(doc_data = dict):
     pass

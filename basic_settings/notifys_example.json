@@ -1,0 +1,18 @@
+{
+    "standard_notify": [
+        {
+            "bd_name": "exaple_name",
+            "time": "10-00",
+            "work_day": "1-5",
+            "text": "example_text",
+            "target":"system"
+        },
+        {
+            "bd_name": "example_user",
+            "time": "21-58",
+            "work_day": "1-5",
+            "text": "example_user_text",
+            "target":"user"
+        }
+    ]
+}
