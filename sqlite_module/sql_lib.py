@@ -43,6 +43,8 @@ def create_tables() ->None:
     try:
         with SQLite() as cursor:
             cursor.execute(
+                """CREATE TABLE IF NOT EXISTS SYSTEM_NOTIFY (NOTIFY_NAME TEXT UNIQUE,NOTIFY_TIME TEXT,NOTIFY_WORK_DAY TEXT,NOTIFY_MESSAGE TEXT,STATUS TEXT default False)""")
+            cursor.execute(
                 """CREATE TABLE IF NOT EXISTS ADMIN_USERS (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, tg_id INT NOT NULL UNIQUE, fio TEXT NOT NULL, phone_num TEXT, duty TEXT default NO, owner TEXT default NO)""")
             cursor.execute(
                 """CREATE TABLE IF NOT EXISTS HPSM_STATUS (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, task INTEGER, rr_task INTEGER,  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)""")
@@ -55,6 +57,63 @@ def create_tables() ->None:
         sqlite_logger.error(
             "Произошла ошибка при создании таблиц", exc_info=True)
 
+def insert_nofity(notify_name=str) -> None:
+    try:
+        sqlite_logger.info(f'Добавляем уведомления с именем {notify_name}')
+        with SQLite() as cursor:
+            cursor.execute(
+                f"""INSERT INTO NOTIFY_FLAGS(NOTIFY_NAME) VALUES ('{notify_name}')""")
+        sqlite_logger.info(f'Уведомление {notify_name} добавлено')
+    except Exception as exc:
+        sqlite_logger.error(
+            f'Произошла ошибка при добавлении уведомления {notify_name}', exc_info=True
+        )
+
+
+def get_all_notifys():
+    try:
+        with SQLite() as cursor:
+            sqlite_logger.info(
+                f'Запрошены все уведомления')
+            cursor.execute("""SELECT * FROM SYSTEM_NOTIFY;""")
+            sqlite_logger.info(
+                f'Уведомления успешно запрошены.')
+            return cursor.fetchall()
+        return True
+    except Exception as exc:
+        sqlite_logger.error(f"Возникла ошибка при запросе уведомлений.",
+                            exc_info=True)
+        return False
+
+
+def change_notify_status(notify_name):
+    try:
+        with SQLite() as cursor:
+            sqlite_logger.info(
+                f'Изменяем статус уведомления {notify_name}')
+            cursor.execute(f"""UPDATE SYSTEM_NOTIFY SET STATUS = '1' WHERE NOTIFY_NAME = '{notify_name}';""")
+            sqlite_logger.info(
+                f'Статус {notify_name} успешно изменен.')
+        return True
+    except Exception as exc:
+        sqlite_logger.error(f"Изменении стауста {notify_name} закончилось ошибкой.",
+                            exc_info=True)
+        return False
+
+
+def midnight_reset_notifications():
+    try:
+        with SQLite() as cursor:
+            sqlite_logger.info(
+                f'Сбрасываем статусы уведомлений ')
+            cursor.execute(f"""UPDATE SYSTEM_NOTIFY SET STATUS = '0';""")
+            sqlite_logger.info(
+                f'Статусы сброшены.')
+        return True
+    except Exception as exc:
+        sqlite_logger.error(f"Во время сброса статусов произошла ошибка.",
+                            exc_info=True)
+        return False
 
 def add_admin_user_db(tg_id=None, user_fio=None, user_phone=None) -> bool:
     try:
@@ -80,7 +139,7 @@ def return_phone_num_db(tg_id_for_get_phone):
     try:
         with SQLite() as cursor:
             sqlite_logger.info(f"Запрошен телефон для пользователя {tg_id_for_get_phone}")
-            cursor.execute(f"select phone_num from ADMIN_USERS where tg_id = {tg_id}")
+            cursor.execute(f"select phone_num from ADMIN_USERS where tg_id = {tg_id_for_get_phone}")
             return cursor.fetchone()[0]
     except Exception as exc:
         sqlite_logger.error(f"Произошла ошибка при запросе телефона для {tg_id_for_get_phone}", exc_info=True)
@@ -147,7 +206,7 @@ def get_owner_or_duty_db(tg_id, role='duty')-> dict:
         sqlite_logger.error(f"Произошла ошибка при запросе {role} из БД")
 
 
-def permissions_decorator(func_for_decorate) -> func:
+def permissions_decorator(func_for_decorate):
     
     def wrapper(message):
         if check_admin_permissions(message.from_user.id):
