@@ -6,3 +6,5 @@ config.py
 __pycache__
 *.pyc
 bot_functions.py
+export_env.sh
+*.log
