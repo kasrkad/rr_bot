@@ -11,3 +11,4 @@ export_env.sh
 standards_notify.json
 test.py
 admins.json
+*.db
