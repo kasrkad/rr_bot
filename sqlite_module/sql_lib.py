@@ -37,7 +37,30 @@ class SQLite:
         time.sleep(0.03)
         sqlite_logger.info("Соединение с бд закрыто")
 
+def insert_admin(tg_id=None, fio=None, phone_num=None, duty='NO' ,owner='NO'):
+    try:
+        sqlite_logger.info(f'Добавляем админа  {tg_id}-{fio}')
+        with SQLite() as cursor:
+            cursor.execute(
+                f"""INSERT INTO ADMIN_USERS(tg_id,fio,phone_num,duty,owner)
+                    VALUES ('{tg_id}','{fio}','{phone_num}','{duty}','{owner}')""")
+        sqlite_logger.info(f'Администратор {tg_id}-{fio} добавлен.')
+    except Exception as exc:
+        sqlite_logger.error(
+            f'Произошла ошибка при добавлении администратора {tg_id}-{fio}', exc_info=True)
 
+
+def load_admin_from_json(path_to_json):
+    import json
+    sqlite_logger.info(f'Загружаем администраторов из файла {path_to_json}')
+    try:
+        with open(path_to_json) as json_file:
+            json_data = json.load(json_file)
+        for admin in json_data['admins']:
+            insert_admin(**admin)
+        sqlite_logger.info('Администраторы успешно загружены.')
+    except Exception as exc:
+        sqlite_logger.error(f'Произошла ошибка при загрузке администраторв из {path_to_json}', exc_info=True)
 
 def create_tables() ->None:
     try:
@@ -57,17 +80,17 @@ def create_tables() ->None:
         sqlite_logger.error(
             "Произошла ошибка при создании таблиц", exc_info=True)
 
-def insert_nofity(notify_name=str, notify_time=str, notify_work_day=str, notify_message=str, notify_target = "system") -> None:
+def insert_nofity(bd_name=str, time=str, work_day=str, text=str, target = "system") -> None:
     try:
-        sqlite_logger.info(f'Добавляем уведомления с именем {notify_name}')
+        sqlite_logger.info(f'Добавляем уведомления с именем {bd_name}')
         with SQLite() as cursor:
             cursor.execute(
                 f"""INSERT INTO SYSTEM_NOTIFY(NOTIFY_NAME,NOTIFY_TIME,NOTIFY_WORK_DAY,NOTIFY_MESSAGE,NOTIFY_TARGET)
-                    VALUES ('{notify_name}','{notify_time}','{notify_work_day}','{notify_message}','{notify_target}')""")
-        sqlite_logger.info(f'Уведомление {notify_name} добавлено')
+                    VALUES ('{bd_name}','{time}','{work_day}','{text}','{target}')""")
+        sqlite_logger.info(f'Уведомление {bd_name} добавлено')
     except Exception as exc:
         sqlite_logger.error(
-            f'Произошла ошибка при добавлении уведомления {notify_name}', exc_info=True
+            f'Произошла ошибка при добавлении уведомления {bd_name}', exc_info=True
         )
 
 
@@ -195,7 +218,7 @@ def set_owner_or_duty_db(tg_id, role='duty'):
         sqlite_logger.error(f"Произошла ошибка при установке роли-{role} для {tg_id}")
 
 
-def get_owner_or_duty_db(tg_id, role='duty')-> dict:
+def get_owner_or_duty_db(role='duty')-> dict:
     try:
         with SQLite() as cursor:
             sqlite_logger.info(f"Запрошен текущий {role} из БД")

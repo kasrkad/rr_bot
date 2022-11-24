@@ -22,7 +22,7 @@ HPSM_USER = os.environ['HPSM_USER']
 HPSM_PASS = os.environ['HPSM_PASS']
 HPSM_CHECK_INTERVAL_SECONDS = os.environ['HPSM_CHECK_INTERVAL_SECONDS']
 #Настройки бота
-ECC_CHAT_ID = os.environ['ECC_CHAT_ID']
+ESS_CHAT_ID = os.environ['ESS_CHAT_ID']
 TEST_STAND_GROUP_ID = os.environ['TEST_STAND_GROUP_ID']
 MPAK_GROUP_ID = os.environ['MPAK_GROUP_ID']
 TG_BOT_TOKEN = os.environ['TG_BOT_TOKEN']
