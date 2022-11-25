@@ -14,6 +14,22 @@ REQUEST_FOR_PRODUCER_RELOAD = '''<soapenv:Envelope xmlns:soapenv="http://schemas
 </soapenv:Body>
 </soapenv:Envelope>'''
 
+REQUEST_BASE64_TO_JSON_CONVERT = """<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:typ="http://emias.mos.ru/simi/v4/openEhrService/types">
+   <soapenv:Header>
+      <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+         <wsse:UsernameToken wsu:Id="UsernameToken-50">
+            <wsse:Username>simi_support</wsse:Username>
+            <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">111</wsse:Password>
+         </wsse:UsernameToken>
+      </wsse:Security>
+   </soapenv:Header>
+   <soapenv:Body>
+      <typ:convertBase64TddToJson>
+         <typ:base64CompositionTdd>{doc_base64}</typ:base64CompositionTdd>
+      </typ:convertBase64TddToJson>
+   </soapenv:Body>
+</soapenv:Envelope>
+"""
 
 SIMI_GET_DOC_REQUEST = """<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:user="http://emias.mos.ru/system/v1/userContext/" xmlns:typ="http://emias.mos.ru/simi/simiService/v5/types/" xmlns:v5="http://emias.mos.ru/simi/document/v5/" xmlns:v51="http://emias.mos.ru/simi/core/v5/">
 <soap:Header>
