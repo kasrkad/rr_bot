@@ -1,5 +1,6 @@
-import requests
-from config import ASTERISK_LOGIN, ASTERISK_PASS
+import sys
+sys.path.append('../')
+import logging
 
 
 asterisk_logger = logging.getLogger('asterisk_logger')
@@ -7,14 +8,10 @@ asterisk_logger_formatter = logging.Formatter(
     "%(name)s %(asctime)s %(levelname)s %(message)s")
 asterisk_logger.setLevel(logging.INFO)
 asterisk_logger_handler_file = logging.FileHandler("service_work.log", 'a')
-asterisk_handler_file.setLevel(logging.INFO)
-asterisk_handler_file.setFormatter(asterisk_logger_formatter)
+asterisk_logger_handler_file.setLevel(logging.INFO)
+asterisk_logger_handler_file.setFormatter(asterisk_logger_formatter)
 
-ASTERISK_GROUP = 'https://pbx/config.php?display=ringgroups&extdisplay=GRP-627'
 
-ASTERSK_HEADERS = {'Referer':'https://pbx/config.php?display=ringgroups&extdisplay=GRP-627'}
-
-ASTERISK_LOGIN_DATA = {"input_user": ASTERISK_LOGIN, "input_pass": ASTERISK_PASS, "submit_login": "Submit"}
 
 ASTERISK_PAYLOAD = {
 "display": "ringgroups",
@@ -36,7 +33,14 @@ ASTERISK_PAYLOAD = {
 "Submit": "Submit Changes"
 }
 
-def set_duty_phone(str:phone_for_set):
+def set_duty_phone(phone_for_set:str):
+    import requests
+    from config import ASTERISK_LOGIN, ASTERISK_PASS
+    ASTERISK_GROUP = 'https://pbx/config.php?display=ringgroups&extdisplay=GRP-627'
+
+    ASTERSK_HEADERS = {'Referer':'https://pbx/config.php?display=ringgroups&extdisplay=GRP-627'}
+
+    ASTERISK_LOGIN_DATA = {"input_user": ASTERISK_LOGIN, "input_pass": ASTERISK_PASS, "submit_login": "Submit"}
     try:
         asterisk_logger.info(f"Запрос на смену номера дежурного в Asterisk на {phone_for_set}")
         payload_for_set = ASTERISK_PAYLOAD

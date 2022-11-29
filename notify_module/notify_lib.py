@@ -57,9 +57,12 @@ class Notifyer:
         notify_hours, notify_min = obj._time.strip().split('-')
         
         current_work_day =  datetime.today().weekday()
-        notify_start_day, notify_end_day = obj._work_day.split('-')
-        
-        notify_work_days = [day for day in range(int(notify_start_day)-1,int(notify_end_day))]
+        if '-' in obj.work_day:
+            notify_start_day, notify_end_day = obj._work_day.split('-')
+            notify_work_days = [day for day in range(int(notify_start_day)-1,int(notify_end_day))]
+        else:
+            notify_work_days = [int(obj.work_day)-1]
+
         if current_hour == notify_hours and current_min == notify_min and obj._status == '0' and (current_work_day in notify_work_days):
             notify_logger.info(f'Условия удовлетворяют для срабатывания уведомления {obj._bd_name}')
             #здесь будет проверка на цель для отправки уведомления obj.target = system значит в канал на дежурного и руководителя,
@@ -76,30 +79,14 @@ class Notifyer:
             keys = ("bd_name" , "time", "work_day", "text", "target", "status")
             for notify_data in all_notifys:
                 self.notifycations.append(Notify(**dict(zip(keys,notify_data))))
-            print(len(self.notifycations))
+            notify_logger.info(f'Загружено {self.notifycations} уведомлений из БД.')
         except Exception as exc:
             notify_logger.error('При загрузке уведомлений произошла ошибка', exc_info=True)
 
-    def load_standard_notify_from_file(self):
-        from json import load
-        try:
-            if self.path_to_file_with_notifycations:
-                notify_logger.info(f'Загружаем базовые уведомления из файла {self.path_to_file_with_notifycations}')
-                with open(self.path_to_file_with_notifycations, 'r', encoding='utf8') as notify_file:
-                    data_for_db_insert = load(notify_file)
-                    for notify in data_for_db_insert['standard_notify']:
-                        insert_nofity(**notify)
-                notify_logger.info('Базовые уведомления успешно загружены.')
-                return
-            notify_logger.info(f'Не задан файл со стандартными уведомлениями, нечего загружать')
-        except Exception as exc:
-            notify_logger.error('Ошибка загрузки стандартных уведомлений', exc_info=True)
-        
-
+                                                               
     def run(self):
         notify_logger.info('Notifyer запущен.')
         from time import sleep
-        self.load_standard_notify_from_file()
         self.load_all_notyfications_from_db()
         try:
             while True:

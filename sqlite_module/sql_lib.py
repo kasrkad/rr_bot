@@ -37,6 +37,10 @@ class SQLite:
         time.sleep(0.03)
         sqlite_logger.info("Соединение с бд закрыто")
 
+
+
+
+
 def insert_admin(tg_id=None, fio=None, phone_num=None, duty='NO' ,owner='NO'):
     try:
         sqlite_logger.info(f'Добавляем админа  {tg_id}-{fio}')
@@ -50,17 +54,37 @@ def insert_admin(tg_id=None, fio=None, phone_num=None, duty='NO' ,owner='NO'):
             f'Произошла ошибка при добавлении администратора {tg_id}-{fio}', exc_info=True)
 
 
-def load_admin_from_json(path_to_json):
+def load_standard_notify_from_file(path_to_file_with_notifycations):
+        import json
+        try:
+            sqlite_logger.info(f'Загружаем базовые уведомления из файла {path_to_file_with_notifycations}')
+            if path_to_file_with_notifycations:
+                with open(path_to_file_with_notifycations, 'r', encoding='utf8') as notify_file:
+                    data_for_db_insert = json.load(notify_file)
+                    for notify in data_for_db_insert['standard_notify']:
+                        insert_nofity(**notify)
+                sqlite_logger.info('Базовые уведомления успешно загружены.')
+                return
+            sqlite_logger.info(f'Не задан файл со стандартными уведомлениями, нечего загружать')
+        except Exception as exc:
+            sqlite_logger.error('Ошибка загрузки стандартных уведомлений', exc_info=True)
+
+
+def load_admin_from_json(path_to_notify_json):
     import json
-    sqlite_logger.info(f'Загружаем администраторов из файла {path_to_json}')
+    sqlite_logger.info(f'Загружаем администраторов из файла {path_to_notify_json}')
     try:
-        with open(path_to_json) as json_file:
-            json_data = json.load(json_file)
-        for admin in json_data['admins']:
-            insert_admin(**admin)
-        sqlite_logger.info('Администраторы успешно загружены.')
+        if path_to_notify_json:
+            with open(path_to_notify_json) as json_file:
+                json_data = json.load(json_file)
+            for admin in json_data['admins']:
+                insert_admin(**admin)
+            sqlite_logger.info('Администраторы успешно загружены.')
+            return
+        sqlite_logger.info(f'Не указан файл путь к файлу с администраторами')    
     except Exception as exc:
-        sqlite_logger.error(f'Произошла ошибка при загрузке администраторв из {path_to_json}', exc_info=True)
+        sqlite_logger.error(f'Произошла ошибка при загрузке администраторв из {path_to_notify_json}', exc_info=True)
+
 
 def create_tables() ->None:
     try:
@@ -79,6 +103,7 @@ def create_tables() ->None:
         print(exc)
         sqlite_logger.error(
             "Произошла ошибка при создании таблиц", exc_info=True)
+
 
 def insert_nofity(bd_name=str, time=str, work_day=str, text=str, target = "system") -> None:
     try:
@@ -138,6 +163,7 @@ def midnight_reset_notifications():
         sqlite_logger.error(f"Во время сброса статусов произошла ошибка.",
                             exc_info=True)
         return False
+
 
 def add_admin_user_db(tg_id=None, user_fio=None, user_phone=None) -> bool:
     try:
@@ -206,7 +232,6 @@ def check_admin_permissions(tg_id_for_check)-> bool:
     except Exception as exc:
         sqlite_logger.error(f"При проверке прав доступа пользователя {tg_id_for_check}",exc_info=True)
 
-
 def set_owner_or_duty_db(tg_id, role='duty'):
     try:
         with SQLite() as cursor:
@@ -230,14 +255,7 @@ def get_owner_or_duty_db(role='duty')-> dict:
         sqlite_logger.error(f"Произошла ошибка при запросе {role} из БД")
 
 
-def permissions_decorator(func_for_decorate):
-    
-    def wrapper(message):
-        if check_admin_permissions(message.from_user.id):
-            func_for_decorate(message)
-        else:
-            raise ValueError("В доступе отказано")
-    return wrapper
+
 
 
 def write_hpsm_status_db(task_count = 0, rr_task_count = 0) -> bool:
