@@ -38,9 +38,6 @@ class SQLite:
         sqlite_logger.info("Соединение с бд закрыто")
 
 
-
-
-
 def insert_admin(tg_id=None, fio=None, phone_num=None, duty='NO' ,owner='NO'):
     try:
         sqlite_logger.info(f'Добавляем админа  {tg_id}-{fio}')
@@ -70,12 +67,12 @@ def load_standard_notify_from_file(path_to_file_with_notifycations):
             sqlite_logger.error('Ошибка загрузки стандартных уведомлений', exc_info=True)
 
 
-def load_admin_from_json(path_to_notify_json):
+def load_admin_from_json(path_to_admin_file):
     import json
-    sqlite_logger.info(f'Загружаем администраторов из файла {path_to_notify_json}')
+    sqlite_logger.info(f'Загружаем администраторов из файла {path_to_admin_file}')
     try:
-        if path_to_notify_json:
-            with open(path_to_notify_json) as json_file:
+        if path_to_admin_file:
+            with open(path_to_admin_file) as json_file:
                 json_data = json.load(json_file)
             for admin in json_data['admins']:
                 insert_admin(**admin)
@@ -83,7 +80,7 @@ def load_admin_from_json(path_to_notify_json):
             return
         sqlite_logger.info(f'Не указан файл путь к файлу с администраторами')    
     except Exception as exc:
-        sqlite_logger.error(f'Произошла ошибка при загрузке администраторв из {path_to_notify_json}', exc_info=True)
+        sqlite_logger.error(f'Произошла ошибка при загрузке администраторов из {path_to_admin_file}', exc_info=True)
 
 
 def create_tables() ->None:
@@ -253,9 +250,6 @@ def get_owner_or_duty_db(role='duty')-> dict:
             return None
     except Exception as exc:
         sqlite_logger.error(f"Произошла ошибка при запросе {role} из БД")
-
-
-
 
 
 def write_hpsm_status_db(task_count = 0, rr_task_count = 0) -> bool:

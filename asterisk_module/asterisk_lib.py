@@ -46,14 +46,14 @@ def set_duty_phone(phone_for_set:str):
         payload_for_set = ASTERISK_PAYLOAD
         payload_for_set['grplist'] = f'phone_for_set'
         reload_asterisk_settings_data = {"handler": "reload"}
-        request_session = request.Session()
+        request_session = requests.Session()
         auth = request_session.post('https://pbx/index.php',data=ASTERISK_LOGIN_DATA,
                                     verify=False)
-        set_duty_phone_request = request_session.post(ASTERISK_GROUP, data=payload,cookies=r.cookies,
+        set_duty_phone_request = request_session.post(ASTERISK_GROUP, data=payload_for_set,cookies=r.cookies,
                                         headers=ASTERSK_HEADERS,
                                         verify=False,
                                         allow_redirects=True)
-        reload_asterisk_settings = request_session.post(ASTERISK_GROUP, data=ring_reload, verify=False)
+        reload_asterisk_settings = request_session.post(ASTERISK_GROUP, data=reload_asterisk_settings_data, verify=False)
         asterisk_logger.info("Запрос успешно обработан")
     except Exception as exc:
         asterisk_logger.error("Произошла ошибка при смене номера дежурного")
