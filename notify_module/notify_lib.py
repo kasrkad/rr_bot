@@ -1,6 +1,7 @@
 import sys
 import logging
 import telebot
+import threading
 sys.path.append('../')
 from sqlite_module.sql_lib import get_all_notifys,create_tables,change_notify_status,midnight_reset_notifications,insert_nofity,get_owner_or_duty_db
 
@@ -25,10 +26,10 @@ class Notify:
         self._status = status
 
 
-class Notifyer:
-    def __init__(self,path_to_file_with_notifycations:str, bot_token:str):
+class Notifyer(threading.Thread):
+    def __init__(self,bot_token:str,*args,**kwargs):
+        super().__init__(*args, **kwargs)
         self.notifycations = []
-        self.path_to_file_with_notifycations = path_to_file_with_notifycations
         self.bot_token = bot_token
 
 
@@ -57,11 +58,11 @@ class Notifyer:
         notify_hours, notify_min = obj._time.strip().split('-')
         
         current_work_day =  datetime.today().weekday()
-        if '-' in obj.work_day:
+        if '-' in obj._work_day:
             notify_start_day, notify_end_day = obj._work_day.split('-')
             notify_work_days = [day for day in range(int(notify_start_day)-1,int(notify_end_day))]
         else:
-            notify_work_days = [int(obj.work_day)-1]
+            notify_work_days = [int(obj._work_day)-1]
 
         if current_hour == notify_hours and current_min == notify_min and obj._status == '0' and (current_work_day in notify_work_days):
             notify_logger.info(f'Условия удовлетворяют для срабатывания уведомления {obj._bd_name}')
@@ -79,7 +80,7 @@ class Notifyer:
             keys = ("bd_name" , "time", "work_day", "text", "target", "status")
             for notify_data in all_notifys:
                 self.notifycations.append(Notify(**dict(zip(keys,notify_data))))
-            notify_logger.info(f'Загружено {self.notifycations} уведомлений из БД.')
+            notify_logger.info(f'Загружено {len(self.notifycations)} уведомлений из БД.')
         except Exception as exc:
             notify_logger.error('При загрузке уведомлений произошла ошибка', exc_info=True)
 
@@ -92,7 +93,7 @@ class Notifyer:
             while True:
                 for _n in self.notifycations:
                     self.check_for_notify(_n)
-                sleep(20)
+                sleep(10)
         except Exception as exc:
             notify_logger.error('В процессе работы Notifyer произошла ошибка', exc_info=True)
             
