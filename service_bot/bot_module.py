@@ -7,6 +7,9 @@ from asterisk_module import asterisk_lib
 from config import *
 import os
 from keyboards import keyboards
+import re
+from simi_requests_module.bot_soap_requests import *
+from simi_requests_module.request_to_simi import *
 
 #configure logger
 service_bot_logger = logging.getLogger('service_bot_logger')
@@ -26,6 +29,9 @@ class Ess_service_bot:
         self.document_regexp = r"[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}"
         self.main_menu_call_data = ['contacts','help','admin_menu']
         self.admin_menu_call_data = ['producer','set_owner_manual','duty']
+        self.documents_call_data = ['download_doc_test','download_json_test','audit_test', 
+                                    'status_test','download_doc_ppak','download_json_ppak',
+                                    'audit_ppak','status_ppak'] 
 
     
     def permissions_decorator(self,func_for_decorate):
@@ -77,9 +83,11 @@ class Ess_service_bot:
         def reqister_duty_engeneer(message):
             try:
                 service_bot_logger.info(f'Запрос на установку дежурного с id {message.from_user.id}')
+                current_duty= sql_lib.get_owner_or_duty_db(role='duty')
                 sql_lib.set_owner_or_duty_db(message.from_user.id)
+                new_duty = sql_lib.get_owner_or_duty_db(role='duty')
                 # set_duty_phone(return_phone_num_db(message.from_user.id))
-                self.bot.send_message(message.from_user.id, f'Успешно установлен новый дежурный {message.from_user.id}')
+                self.bot.send_message(message.from_user.id, f'Предыдущий дежурный - [{current_duty["fio"]}](tg://user?id={current_duty["tg_id"]}),\nновый дежурный - [{new_duty["fio"]}](tg://user?id={new_duty["tg_id"]})')
             except Exception as exc:
                 service_bot_logger.error(f'Ошибка при установке дежурного {exc}')
                 self.bot.send_message(message.from_user.id, 'Не удалось установить нового дежурного')
@@ -128,6 +136,16 @@ class Ess_service_bot:
                 service_bot_logger.error(f'Произошла ошибка при установке HPSM_owner = {message.text}', exc_info=True)
             
 
+        def send_file(tg_id,files:list):
+            if files:
+                for file in files:
+                    doc = open(file)
+                    self.bot.send_document(tg_id,doc)
+                    doc.close()
+                    os.remove(file)
+            else:
+                raise ValueError
+
         @self.bot.message_handler(commands=['/producer'])
         @self.permissions_decorator
         def producer_recreate(message):
@@ -153,6 +171,60 @@ class Ess_service_bot:
                 service_bot_logger.error(f'Произошла ошибка при запросе контактов от {message.from_user.id}', exc_info=True)
 
 
+        @self.bot.message_handler(regexp=self.document_regexp)
+        def document_handle(message):
+            global finded_docs 
+            finded_docs = re.findall(self.document_regexp, message.text.strip())
+            if sql_lib.check_admin_permissions(message.from_user.id):
+                self.bot.send_message(message.from_user.id,f'Админские права подтверждены, выберите действие над документом', 
+                                        reply_markup=keyboards.document_keyboard_admin)
+            else:
+                self.bot.send_message(message.from_user.id,'Админские права не подтверждены, доступен только стенд ТЕСТ',
+                                        reply_markup=keyboards.document_keyboard_user)
+            
+            @self.bot.callback_query_handler(func=lambda call: call.data in self.documents_call_data)
+            def callback_inline(call):
+                try:
+                    global finded_docs
+                    self.bot.edit_message_text(
+                        chat_id=call.message.chat.id, message_id=call.message.message_id, text="Запрашиваю документы.")
+                    if call.data == 'download_doc_test':
+                        doc_data_test = simi_document_request(request_to_simi=SIMI_GET_DOC_REQUEST, stand_node_adress=DEV_SOAP_URL,
+                                                            documents_ids=finded_docs, requester_tg_id=call.from_user.id)
+                        documents_for_send = write_json_or_xml_document(doc_data = doc_data_test)
+                        send_file(tg_id=call.from_user.id, files=documents_for_send)
+                    if call.data == 'download_json_test':
+                        doc_data_json_test = base64_decode_to_json(request_to_convert=REQUEST_BASE64_TO_JSON_CONVERT, request_to_simi=SIMI_GET_DOC_REQUEST,
+                                                                documents_ids=finded_docs, stand_node_adress=DEV_SOAP_URL, requester_tg_id=call.from_user.id)
+                        documents_for_send = write_json_or_xml_document(doc_data=doc_data_json_test, file_format='json')               
+                        send_file(tg_id=call.from_user.id, files=documents_for_send)
+                    if call.data == 'audit_test':
+                        pass
+                    if call.data == 'status_test':
+                        pass
+                    if call.data == 'download_doc_ppak':
+                        doc_data_ppak = simi_document_request(request_to_simi=SIMI_GET_DOC_REQUEST,stand_node_adress=PPAK_SOAP_URL,
+                        documents_ids=finded_docs,requester_tg_id=call.from_user.id)
+                        documents_for_send = write_json_or_xml_document(doc_data = doc_data_ppak)
+                        send_file(tg_id=call.from_user.id, files=documents_for_send)
+                    if call.data == 'download_json_ppak':
+                        doc_data_json_test = base64_decode_to_json(request_to_convert=REQUEST_BASE64_TO_JSON_CONVERT, request_to_simi=SIMI_GET_DOC_REQUEST,
+                                                                documents_ids=finded_docs, stand_node_adress=PPAK_SOAP_URL, requester_tg_id=call.from_user.id)
+                        documents_for_send = write_json_or_xml_document(doc_data=doc_data_json_test, file_format='json')               
+                        send_file(tg_id=call.from_user.id, files=documents_for_send)
+                    if call.data == 'audit_ppak':
+                        pass
+                    if call.data == 'status_ppak':
+                        pass
+
+                except ValueError as val_error:
+                    service_bot_logger.info('Пустой список документов')
+                    self.bot.send_message(call.from_user.id,'Документы на стенде не обнаружены.')
+                except Exception as exc:
+                    service_bot_logger.error(f'Произошла ошибка при работе с документами', exc_info=True)
+                    self.bot.send_message(call.from_user.id, 'Вовремя операции с документом произошла ошибка.')
+
+
         @self.bot.message_handler(commands=['/adminPanel'])
         @self.permissions_decorator
         def show_admin_panel(message):
@@ -165,21 +237,30 @@ class Ess_service_bot:
 
         @self.bot.callback_query_handler(func=lambda call: call.data in self.main_menu_call_data)
         def callback_inline(call):
-            if call.data == 'admin_menu':
-                show_admin_panel(call)
-            if call.data == 'help':
-                help_command(call)
-            if call.data == 'contacts':
-                get_contacts(call)
+            try:
+                if call.data == 'admin_menu':
+                    show_admin_panel(call)
+                if call.data == 'help':
+                    help_command(call)
+                if call.data == 'contacts':
+                    get_contacts(call)
+            except Exception as exc:
+                service_bot_logger.error('Во время операции произошла ошибка',exc_info=True)
+                self.bot.send_message(call.from_user.id, 'Во время операции произошла ошибка')
 
         @self.bot.callback_query_handler(func=lambda call: call.data in self.admin_menu_call_data)
         def callback_inline(call):
-            if call.data == 'set_owner_manual':
-                set_owner_dialogue(call)
-            if call.data == 'duty':
-                reqister_duty_engeneer(call)
-            if call.data == 'producer':
-                producer_recreate(call)
+            try:
+                if call.data == 'set_owner_manual':
+                    set_owner_dialogue(call)
+                if call.data == 'duty':
+                    reqister_duty_engeneer(call)
+                if call.data == 'producer':
+                    producer_recreate(call)
+            except Exception as exc:
+                service_bot_logger.error(f'Во время операции произошла ошибка',exc_info=True)
+                self.bot.send_message(call.from_user.id,'Во время операции произошла ошибка.')
+
 
     def run(self):
         try:
