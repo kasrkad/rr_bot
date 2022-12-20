@@ -1,3 +1,4 @@
+from config import PPAK_SOAP_USER
 import requests
 import os
 import logging
@@ -15,6 +16,7 @@ request_to_simi_logger.addHandler(request_to_simi_logger_handler_file)
 
 PRODUCER_SOAP_PASS = os.environ['PRODUCER_SOAP_PASS']
 PRODUCER_SOAP_USER = os.environ['PRODUCER_SOAP_USER']
+PPAK_SOAP_USER = os.environ['PPAK_SOAP_USER']
 SIMI_DNS_NAME_ENDPOINT_TEMPLATE = os.environ['SIMI_DNS_NAME_ENDPOINT_TEMPLATE']
 SIMIP3_DNS_NAME_ENDPOINT_TEMPLATE = os.environ['SIMIP3_DNS_NAME_ENDPOINT_TEMPLATE']
 HEADERS = {'content-type': 'text/xml'}
@@ -52,7 +54,7 @@ def get_request_diagnostic_endpoint(request_to_get) -> dict:
     for node_num_simi in range(1,13):
         url = SIMI_DNS_NAME_ENDPOINT_TEMPLATE.format(i=node_num_simi)
         try:
-            response = requests.post(request_to_get, data=request_body, headers=HEADERS)
+            response = requests.post(request_to_get, data=request_to_get, headers=HEADERS)
             if "true" in response.text:
                 request_nodes_result[url] = True
             else:
@@ -64,7 +66,7 @@ def get_request_diagnostic_endpoint(request_to_get) -> dict:
     for node_num_simi_asinc in range(1,3):
         url = SIMIP3_DNS_NAME_ENDPOINT_TEMPLATE.format(i=node_num_simi_asinc)
         try:
-            response = requests.post(request_to_get, data=request_body, headers=HEADERS)
+            response = requests.post(request_to_get, data=request_to_get, headers=HEADERS)
             if "true" in response.text:
                 request_nodes_result[url] = True
             else:
@@ -103,7 +105,7 @@ def producer_recreate_request(producer_recreate_request) -> dict:
     return request_nodes_result
 
 
-def simi_document_request(request_to_simi, stand_node_adress, documents_ids:list, requester_tg_id=None) -> dict:
+def simi_document_request(request_to_simi, stand_node_adress, documents_ids, requester_tg_id=None) -> dict:
     request_to_simi_logger.info(f'Пользователем {requester_tg_id} запрошены документы {",".join(doc for doc in documents_ids)}.')
     docs_with_content = {}
     errors = False
@@ -140,12 +142,12 @@ def write_json_or_xml_document(doc_data = dict, file_format = 'xml'):
                     id_file.write(doc_content.encode('utf-8').strip())
                 path_way_for_files.append(f'./docs_xml/{doc_id}.xml')
             elif file_format == 'json':
-                json_data = json.load(doc_content)
+                json_data = json.loads(doc_content)
                 with open(f"./docs_json/{doc_id}.json", "w") as json_for_write:
-                    json.dump(json_data,doc_content, ensure_ascii=False , indent=2)
+                    json.dump(json_data,json_for_write, ensure_ascii=False , indent=2)
                 path_way_for_files.append(f'./docs_json/{doc_id}.json')
         except Exception as exc:
-            request_to_simi_logger.info(f'Произошла ошибка при записи документа {doc_id} в формате {file_format}.')
+            request_to_simi_logger.info(f'Произошла ошибка при записи документа {doc_id} в формате {file_format}.', exc_info=True)
     return path_way_for_files 
 
 
