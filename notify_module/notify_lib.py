@@ -72,7 +72,10 @@ class Notifyer(threading.Thread):
             change_notify_status(obj._bd_name)
             self.send_notification(notify_obj=obj)
 
+        if current_hour == '23' and current_min == '00':
+            midnight_reset_notifications()
 
+            
     def load_all_notyfications_from_db(self):
         notify_logger.info('Загружаем все уведомления из базы данных.')
         try:
