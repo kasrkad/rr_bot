@@ -1,6 +1,6 @@
 #!/bin/python3
 import os
-
+DEV_SOAP_URL = os.environ['DEV_SOAP_URL']
 #Настройки для пересоздания ЕСУ_Продюсера
 PRODUCER_SOAP_USER = os.environ['PRODUCER_SOAP_USER']
 PRODUCER_SOAP_PASS = os.environ['PRODUCER_SOAP_PASS']
