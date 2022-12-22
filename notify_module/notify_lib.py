@@ -10,7 +10,7 @@ notify_logger = logging.getLogger('notify_logger')
 notify_logger_formatter = logging.Formatter(
     "%(name)s %(asctime)s %(levelname)s %(message)s")
 notify_logger.setLevel(logging.INFO)
-notify_logger_logger_handler_file = logging.FileHandler("notify.log", 'a')
+notify_logger_logger_handler_file = logging.FileHandler("./logs/notify.log", 'a')
 notify_logger_logger_handler_file.setLevel(logging.INFO)
 notify_logger_logger_handler_file.setFormatter(notify_logger_formatter)
 notify_logger.addHandler(notify_logger_logger_handler_file)
@@ -75,7 +75,7 @@ class Notifyer(threading.Thread):
         if current_hour == '23' and current_min == '00':
             midnight_reset_notifications()
 
-            
+
     def load_all_notyfications_from_db(self):
         notify_logger.info('Загружаем все уведомления из базы данных.')
         try:

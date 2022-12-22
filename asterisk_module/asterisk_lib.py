@@ -7,7 +7,7 @@ asterisk_logger = logging.getLogger('asterisk_logger')
 asterisk_logger_formatter = logging.Formatter(
     "%(name)s %(asctime)s %(levelname)s %(message)s")
 asterisk_logger.setLevel(logging.INFO)
-asterisk_logger_handler_file = logging.FileHandler("service_work.log", 'a')
+asterisk_logger_handler_file = logging.FileHandler("./logs/service_work.log", 'a')
 asterisk_logger_handler_file.setLevel(logging.INFO)
 asterisk_logger_handler_file.setFormatter(asterisk_logger_formatter)
 

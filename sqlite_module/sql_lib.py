@@ -9,11 +9,9 @@ sqlite_logger = logging.getLogger('sqlite_logger')
 sqlite_logger_formatter = logging.Formatter(
     "%(name)s %(asctime)s %(levelname)s %(message)s")
 sqlite_logger.setLevel(logging.INFO)
-
-sqlite_logger_handler_file = logging.FileHandler("db_work.log", 'a')
+sqlite_logger_handler_file = logging.FileHandler("./logs/db_work.log", 'a')
 sqlite_logger_handler_file.setLevel(logging.INFO)
 sqlite_logger_handler_file.setFormatter(sqlite_logger_formatter)
-
 sqlite_logger_handler_stream = logging.StreamHandler()
 sqlite_logger_handler_stream.setLevel(logging.ERROR)
 sqlite_logger_handler_stream.setFormatter(sqlite_logger_formatter)
