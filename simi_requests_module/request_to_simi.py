@@ -8,7 +8,7 @@ request_to_simi_logger = logging.getLogger('request_to_simi_logger')
 request_to_simi_logger_formatter = logging.Formatter(
     "%(name)s %(asctime)s %(levelname)s %(message)s")
 request_to_simi_logger.setLevel(logging.INFO)
-request_to_simi_logger_handler_file = logging.FileHandler("simi_request.log", 'a')
+request_to_simi_logger_handler_file = logging.FileHandler("./logs/simi_request.log", 'a')
 request_to_simi_logger_handler_file.setLevel(logging.INFO)
 request_to_simi_logger_handler_file.setFormatter(request_to_simi_logger_formatter)
 request_to_simi_logger.addHandler(request_to_simi_logger_handler_file)
