@@ -10,13 +10,14 @@ from keyboards import keyboards
 import re
 from simi_requests_module.bot_soap_requests import *
 from simi_requests_module.request_to_simi import *
+from oracle_module import oracle_lib
 
 #configure logger
 service_bot_logger = logging.getLogger('service_bot_logger')
 service_bot_logger_formatter = logging.Formatter(
     "%(name)s %(asctime)s %(levelname)s %(message)s")
 service_bot_logger.setLevel(logging.INFO)
-service_bot_logger_logger_handler_file = logging.FileHandler("service_bot_logger.log", 'a')
+service_bot_logger_logger_handler_file = logging.FileHandler("./logs/service_bot_logger.log", 'a')
 service_bot_logger_logger_handler_file.setLevel(logging.INFO)
 service_bot_logger_logger_handler_file.setFormatter(service_bot_logger_formatter)
 service_bot_logger.addHandler(service_bot_logger_logger_handler_file)
@@ -46,6 +47,7 @@ class Ess_service_bot:
 
     def initilize(self,path_to_admin_json, path_to_notify_json):
         try:
+            os.makedirs('logs',exist_ok=True)
             service_bot_logger.info('Инициализируем бота, загружаем админов и уведомления.')
             if not os.path.exists('botbase.db'):
                 sql_lib.create_tables()
@@ -199,9 +201,14 @@ class Ess_service_bot:
                         documents_for_send = write_json_or_xml_document(doc_data=doc_data_json_test, file_format='json')               
                         send_file(tg_id=call.from_user.id, files=documents_for_send)
                     if call.data == 'audit_test':
-                        pass
+                        audit_for_send = oracle_lib.get_audit_for_document(oracle_connection_string=DEV_DOC_CONNECTION_STRING, 
+                                                                            documents=finded_docs)
+                        send_file(tg_id=call.from_user.id, files=audit_for_send)
                     if call.data == 'status_test':
-                        pass
+                        documents_with_statuses = oracle_lib.get_document_metadata_status(oracle_connection_string=DEV_DOC_CONNECTION_STRING,
+                                                                                        documents=finded_docs)
+                        for document, status in documents_with_statuses.items():
+                            self.bot.send_message(call.from_user.id,f'{document}: {status}')
                     if call.data == 'download_doc_ppak':
                         doc_data_ppak = simi_document_request(request_to_simi=SIMI_GET_DOC_REQUEST,stand_node_adress=PPAK_SOAP_URL,
                         documents_ids=finded_docs,requester_tg_id=call.from_user.id)
@@ -213,12 +220,17 @@ class Ess_service_bot:
                         documents_for_send = write_json_or_xml_document(doc_data=doc_data_json_test, file_format='json')               
                         send_file(tg_id=call.from_user.id, files=documents_for_send)
                     if call.data == 'audit_ppak':
-                        pass
+                        audit_for_send = oracle_lib.get_audit_for_document(oracle_connection_string=PPAK_STANDBY_ORACLE_CONNECTION_STRING, 
+                                                                            documents=finded_docs)
+                        send_file(tg_id=call.from_user.id, files=audit_for_send)
                     if call.data == 'status_ppak':
-                        pass
+                        documents_with_statuses = oracle_lib.get_document_metadata_status(oracle_connection_string=PPAK_STANDBY_ORACLE_CONNECTION_STRING,
+                                                                                        documents=finded_docs)
+                        for document, status in documents_with_statuses.items():
+                            self.bot.send_message(call.from_user.id,f'{document}: {status}')
 
                 except ValueError as val_error:
-                    service_bot_logger.info('Пустой список документов')
+                    service_bot_logger.info(f'Пустой список документов')
                     self.bot.send_message(call.from_user.id,'Документы на стенде не обнаружены.')
                 except Exception as exc:
                     service_bot_logger.error(f'Произошла ошибка при работе с документами', exc_info=True)
