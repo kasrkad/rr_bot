@@ -253,7 +253,7 @@ def set_owner_or_duty_db(tg_id, role='duty'):
         sqlite_logger.error(f"Произошла ошибка при установке роли-{role} для {tg_id}")
 
 
-def get_owner_or_duty_db(role='duty')-> dict:
+def get_owner_or_duty_db(role='duty'):
     try:
         with SQLite() as cursor:
             sqlite_logger.info(f"Запрошен текущий {role} из БД")

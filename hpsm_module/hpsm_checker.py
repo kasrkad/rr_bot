@@ -1,15 +1,21 @@
 import sys
+from time import sleep
+import os
 import logging
+import telebot
 from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-import time
 from threading import Thread
 sys.path.append('../')
 from sqlite_module.sql_lib import get_owner_or_duty_db
 from bot_exceptions.hpsm_exeptions import GetHpsmFrameException,GetPageException,HpsmLoginException
-from config import HPSM_PASS, HPSM_PAGE, HPSM_CHECK_INTERVAL_SECONDS, HPSM_USER, TG_BOT_TOKEN, RR_LIST
+
+#get env's
+HPSM_PAGE = os.environ["HPSM_PAGE"]
+HPSM_EXIT_PAGE = os.environ["HPSM_EXIT_PAGE"]
+HPSM_USER = os.environ["HPSM_USER"]
+HPSM_PASS = os.environ["HPSM_PASS"]
+HPSM_CHECK_INTERVAL_SECONDS = int(os.environ["HPSM_CHECK_INTERVAL_SECONDS"])
+
 
 #configure logger
 hpsm_logger = logging.getLogger('hpsm_logger')
@@ -23,18 +29,24 @@ hpsm_logger.addHandler(hpsm_logger_logger_handler_file)
 
 class Hpsm_checker(Thread):
 
-    def __init__(self,bot_token:str,*args,**kwargs):
+    def __init__(self,bot_token:str,rr_file_path,*args,**kwargs):
         super().__init__(*args, **kwargs)
         self.bot_token = bot_token
+        self.rr_file_path = rr_file_path
+        self.rr_list = []
 
 
     def create_webdriver(self):
         options = webdriver.FirefoxOptions()
-        options.add_argument('--headless')
+        # options.add_argument('--headless')
         driver = webdriver.Firefox(executable_path='./geckodriver', options=options)
         driver.set_window_size(1920, 1080)
         return driver
 
+    def load_rr_from_file(self):
+        with open(self.rr_file_path, 'r', encoding='utf8') as rr_file:
+            for line in rr_file:
+                self.rr_list.append(line.strip())
 
     def get_html_page(self, webdriver):
         hpsm_logger.info(f'Запрашиваем страницу {HPSM_PAGE}')
@@ -60,21 +72,30 @@ class Hpsm_checker(Thread):
             raise HpsmLoginException
 
         hpsm_logger.info('Делаем паузу для загрузки страницы')
-        try:
-            wait = WebDriverWait(webdriver, 80).until(EC.presence_of_element_located(By.TAG_NAME,"iframe"))
-        except Exception as exc:
-            print("time out")
-            return
+        load_counter = 1
+        while load_counter < 15:
 
-
-        try:
-            webdriver.switch_to.frame(webdriver.find_element_by_tag_name('iframe'))
-            hpsm_html = webdriver.page_source
-        except Exception as exc:
+            try:
+                webdriver.switch_to.frame(webdriver.find_element_by_tag_name('iframe'))
+            except Exception as exc:
+                print(f'попытка - {load_counter}',exc)
+                hpsm_logger.info(f"Элемент iframe не обнаружен попытка №{load_counter}")
+                sleep(1)
+                load_counter += 1
+                continue
+            else:
+                sleep(1)
+                break
+        else:
+            hpsm_logger.error('Фрейм с заявками не найден ')
+            webdriver.get(HPSM_EXIT_PAGE)
             webdriver.quit()
-            hpsm_logger.error('Произошла ошибка при выборе фрейма с заявками.')
-            raise GetHpsmFrameException
+            #Отправка инфы в чат что не получилось взять заявки
+            
         
+        hpsm_html = webdriver.page_source
+        webdriver.get(HPSM_EXIT_PAGE)
+        webdriver.close()
         return hpsm_html
 
     
@@ -86,14 +107,12 @@ class Hpsm_checker(Thread):
 
 
     def run(self):
-        source = self.get_html_page(webdriver=self.create_webdriver())
-        print(self.parse_hpsm_html(html_source=source))
-
-
-
-if __name__ == '__main__':
-    try:
-        checker = Hpsm_checker('token')
-        checker.run()
-    except Exception as exc:
-        print(exc)
+        while True:
+            try:
+                source = self.get_html_page(webdriver=self.create_webdriver()) 
+                print(self.parse_hpsm_html(html_source=source))
+                sleep(HPSM_CHECK_INTERVAL_SECONDS)
+            except Exception as exc:
+                print(exc)
+                #отправка уведомления 
+ 
