@@ -16,11 +16,6 @@ SIMI_DOC_REPO_USER = os.environ['SIMI_DOC_REPO_USER']
 SIMI_DOC_REPO_PASS = os.environ['SIMI_DOC_REPO_PASS']
 SIMI_DOC_REPO_URL = os.environ['SIMI_DOC_REPO_URL']
 
-#HPSM настройки
-HTTP_PROXY = os.environ['HTTP_PROXY']
-HPSM_USER = os.environ['HPSM_USER']
-HPSM_PASS = os.environ['HPSM_PASS']
-HPSM_CHECK_INTERVAL_SECONDS = os.environ['HPSM_CHECK_INTERVAL_SECONDS']
 #Настройки бота
 ESS_CHAT_ID = os.environ['ESS_CHAT_ID']
 TEST_STAND_GROUP_ID = os.environ['TEST_STAND_GROUP_ID']
@@ -57,10 +52,6 @@ PREDPPAK_SIMI_IP = os.environ['PREDPPAK_SIMI_IP']
 PREDPPAK_READ_DOC_CONNECTION_STRING = os.environ['PREDPPAK_READ_DOC_CONNECTION_STRING']
 PREDPPAK_READ_BE_IP = os.environ['PREDPPAK_READ_BE_IP']
 PREDPPAK_READ_SIMI_IP = os.environ['PREDPPAK_READ_SIMI_IP']
-#ТПАК
-TPAK_DOC_CONNECTION_STRING = os.environ['TPAK_DOC_CONNECTION_STRING']
-TPAK_BE_IP = os.environ['TPAK_BE_IP']
-TPAK_SIMI_IP = os.environ['TPAK_SIMI_IP']
 #Настройки для офисных стендов
 #75
 BE_IP_75 = os.environ['BE_IP_75']
@@ -78,7 +69,35 @@ SIMI_IP_73 = os.environ['SIMI_IP_73']
 
 #Для валидации строки с артефактами загрузки в ДЕВ
 CORRECT_ARTIFACTS = ['cct','vis','tmpl']
-DUTY_OWNER = '[Александр Бауман][tg://user?id=753785354]'
+
+#HPSM настройки
+HTTP_PROXY = os.environ['HTTP_PROXY']
+HPSM_USER = os.environ['HPSM_USER']
+HPSM_PASS = os.environ['HPSM_PASS']
+HPSM_CHECK_INTERVAL_SECONDS = os.environ['HPSM_CHECK_INTERVAL_SECONDS']
+HPSM_PAGE = 'https://hpsm.emias.mos.ru/sm/index.do'
+HPSM_EXIT = 'https://hpsm.emias.mos.ru/sm/goodbye.jsp?lang='
+
+RR_LIST = ['Анализ вышедших обновлений и предлагаемых изменений СПО, формирование предложений Заказчику по их внесению в Систему',
+           'Анализ, архивация лог-файлов ППО',
+           'Анализ, архивация лог-файлов СПО',
+           'Контроль создания резервной копии',
+           'Контроль сроков действия лицензий и сертификатов',
+           'Контрольное восстановление Системы из РК и проверка работоспособности Системы после восстановления',
+           'Мониторинг количества документов и дискового пространства, занимаемого индексами Better EHR Server',
+           'Оптимизация индексов под текущее наполнение баз данных',
+           'Оптимизация индексов под текущее наполнение БД',
+           'Управление объёмом и размещением табличных пространств Баз данных, своевременное определение необходимости расширения и подготовка запроса для расширения выделенного пространства под хранение данных',
+           'Перемещение из рабочих баз в архив устаревших версий элементов справочников, классификаторов и протоколов взаимодействия',
+           'Проведение горизонтального и вертикального масштабирования имеющихся решений',
+           'Проверка актуальности информации в СМКСС',
+           'Проверка доступности компонентов Системы',
+           'Проверка прав и атрибутов доступа к Системе',
+           'Проверка срабатывания и уведомлений систем мониторинга, а также анализ необходимости и целесообразности изменения параметров мониторинга Системы',
+           'Своевременный сбор статистики по изменяющимся таблицам БД',
+           'Управление объёмом и размещением табличных пространств БД, своевременное определение необходимости расширения и подготовка запроса для расширения выделенного пространства под хранение данных',
+           'Формирование отчетов о произошедших событиях']
+
 
 STAND_75 = {
     "75":[
@@ -171,18 +190,6 @@ predppak = {
 ]
 }
 
-tpak = {
-	"tpak":[
-	f'--document-registry-url jdbc:oracle:thin:@{TPAK_DOC_CONNECTION_STRING}',
-	f'--document-registry-username {DEFAULT_ORACLE_USER}',
-	f'--document-registry-password {DEFAULT_ORACLE_PASS}',
-	f'--think-ehr-rest-url http://{TPAK_BE_IP}:8081',
-	f'--think-ehr-rest-username {DEFAULT_MARAND_USER}',
-	f'--think-ehr-rest-password {DEFAULT_MARAND_PASS}',
-	f'--simi-diagnostics-web-service-v1-url http://{TPAK_SIMI_IP}:8080/Simi2Soap/DiagnosticsWebService/v1/Endpoint?wsdl'
-]
-}
 
-
-stand_list = {"dev": dev, "predppak": predppak, "tpak":tpak, "mpak": mpak, "73": STAND_73, "75":STAND_75, "71":STAND_71}
+stand_list = {"dev": dev, "predppak": predppak, "mpak": mpak, "73": STAND_73, "75":STAND_75, "71":STAND_71}
 
