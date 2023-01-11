@@ -12,6 +12,7 @@ from simi_requests_module.bot_soap_requests import *
 from simi_requests_module.request_to_simi import *
 from oracle_module import oracle_lib
 
+
 #configure logger
 service_bot_logger = logging.getLogger('service_bot_logger')
 service_bot_logger_formatter = logging.Formatter(
@@ -28,8 +29,8 @@ class Ess_service_bot:
     def __init__(self, bot_token):
         self.bot = telebot.TeleBot(bot_token, parse_mode='MARKDOWN')
         self.document_regexp = r"[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}"
-        self.main_menu_call_data = ['contacts','help','admin_menu']
-        self.admin_menu_call_data = ['producer','set_owner_manual','duty']
+        self.main_menu_call_data = ['contacts','help','admin_menu','notify_get']
+        self.admin_menu_call_data = ['producer','set_owner_manual','duty','notify_set_active']
         self.documents_call_data = ['download_doc_test','download_json_test','audit_test', 
                                     'status_test','download_doc_ppak','download_json_ppak',
                                     'audit_ppak','status_ppak'] 
@@ -159,6 +160,7 @@ class Ess_service_bot:
             except Exception as exc:
                 service_bot_logger.error(f'Произошла ошибка при пересоздании продюсера, запрос от {message.from_user.id}.', exc_info=True)
 
+
         @self.bot.message_handler(commands=['contacts'])
         def get_contacts(message):
             service_bot_logger.info(f'Пользователем {message.from_user.id} запрошены контакты.')
@@ -171,6 +173,48 @@ class Ess_service_bot:
             except Exception as exc:
                 self.bot.send_message(message.from_user.id, f'Произошла ошибка при запросе контактов.')
                 service_bot_logger.error(f'Произошла ошибка при запросе контактов от {message.from_user.id}', exc_info=True)
+
+        @self.permissions_decorator
+        @self.bot.message_handler(commands=['/notify_get'])
+        def notify_get(message):
+            service_bot_logger.info(f'Пользователем {message.from_user.id} запрошены уведомления.')
+            try:
+                notifys = sql_lib.get_all_notifys()
+                message_with_notifys = ""
+                for notify in notifys:
+                    message_with_notifys += f"id: {notify[0]}\nИмя: {notify[1]}\nВремя срабатывания: {notify[2]}\nДни недели: {notify[3]}\nПользовательское/системное: {notify[5]}\nАктивное: {notify[7]}\n\n"
+                if message_with_notifys:
+                    self.bot.send_message(message.from_user.id, "Список доступных уведомлений.")
+                    self.bot.send_message(message.from_user.id, message_with_notifys, parse_mode="HTML")
+                    return
+                self.bot.send_message(message.from_user.id,'Уведомлений не обнаружено' )
+            except Exception as exc:
+                self.bot(message.from_user.id,f'Произошла ошибка при запросе уведомлений.')
+                service_bot_logger.error(f'Произошла ошибка при запросе уведомлений от {message.from_user.id}', exc_info=True)
+
+
+        @self.permissions_decorator
+        @self.bot.message_handler(commands=['/change_notify_status'])
+        def change_notify_status_dialogue(message):
+            service_bot_logger.info(f'Пользовтелем {message.from_user.id} запрошено изменение состояния уведомления.')
+            notify_get(message)
+            message_for_set_status = self.bot.send_message(message.from_user.id, 'Введите id уведомлений, и желаемый статус(on/off), через : .Пример - 1:off')
+            self.bot.register_next_step_handler(message_for_set_status, set_notify_status)
+
+        def set_notify_status(message):
+            service_bot_logger.info(f'Меняем статус {message.text}')
+            notify_id, active = message.text.strip().split(':')
+            if active == 'off':
+                active = False
+            else:
+                active = True
+            try:
+                sql_lib.set_notify_active(notify_id=notify_id,active=active)
+                self.bot.send_message(message.from_user.id,f'Статус уведомления успешно изменен.')
+            except Exception as exc:
+                service_bot_logger.info(f'Произошла ошибка при изменении состояния уведомления {message.text}')
+                self.bot.send_message(message.from_user.id,f'Произошла ошибка при изменении состояния уведомления.')
+
 
 
         @self.bot.message_handler(regexp=self.document_regexp)
@@ -256,6 +300,8 @@ class Ess_service_bot:
                     help_command(call)
                 if call.data == 'contacts':
                     get_contacts(call)
+                if call.data == 'notify_get':
+                    notify_get(call)
             except Exception as exc:
                 service_bot_logger.error('Во время операции произошла ошибка',exc_info=True)
                 self.bot.send_message(call.from_user.id, 'Во время операции произошла ошибка')
@@ -269,6 +315,8 @@ class Ess_service_bot:
                     reqister_duty_engeneer(call)
                 if call.data == 'producer':
                     producer_recreate(call)
+                if call.data == 'notify_set_active':
+                    change_notify_status_dialogue(call)
             except Exception as exc:
                 service_bot_logger.error(f'Во время операции произошла ошибка',exc_info=True)
                 self.bot.send_message(call.from_user.id,'Во время операции произошла ошибка.')

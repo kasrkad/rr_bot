@@ -17,13 +17,15 @@ notify_logger.addHandler(notify_logger_logger_handler_file)
 
 
 class Notify:
-    def __init__(self,bd_name=None, time=None, work_day=None,text=None, status = 0 , target = "system"):
+    def __init__(self,id=None,bd_name=None, time=None, work_day=None,text=None, status = 0 , target = "system", active='True'):
+        self._id = id
         self._time = time
         self._text = text
         self._work_day = work_day
         self._bd_name = bd_name
         self._target = target
         self._status = status
+        self._active = active
 
 
 class Notifyer(threading.Thread):
@@ -64,7 +66,7 @@ class Notifyer(threading.Thread):
         else:
             notify_work_days = [int(obj._work_day)-1]
 
-        if current_hour == notify_hours and current_min == notify_min and obj._status == '0' and (current_work_day in notify_work_days):
+        if current_hour == notify_hours and current_min == notify_min and (obj._status == '0' and obj._active=='True') and (current_work_day in notify_work_days):
             notify_logger.info(f'Условия удовлетворяют для срабатывания уведомления {obj._bd_name}')
             #здесь будет проверка на цель для отправки уведомления obj.target = system значит в канал на дежурного и руководителя,
             #user значит только дежурному в личку
@@ -80,7 +82,7 @@ class Notifyer(threading.Thread):
         notify_logger.info('Загружаем все уведомления из базы данных.')
         try:
             all_notifys = get_all_notifys()
-            keys = ("bd_name" , "time", "work_day", "text", "target", "status")
+            keys = ("id","bd_name" , "time", "work_day", "text", "target", "status", "active")
             for notify_data in all_notifys:
                 self.notifycations.append(Notify(**dict(zip(keys,notify_data))))
             notify_logger.info(f'Загружено {len(self.notifycations)} уведомлений из БД.')
@@ -96,7 +98,7 @@ class Notifyer(threading.Thread):
             while True:
                 for _n in self.notifycations:
                     self.check_for_notify(_n)
-                sleep(10)
+                sleep(20)
         except Exception as exc:
             notify_logger.error('В процессе работы Notifyer произошла ошибка', exc_info=True)
             
