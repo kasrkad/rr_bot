@@ -14,8 +14,10 @@ admin_menu_keyboard = types.InlineKeyboardMarkup()
 duty_button = types.InlineKeyboardButton(text = "Дежурю", callback_data = "duty")
 set_owner_manual_button = types.InlineKeyboardButton(text = "Назначение на HPSM", callback_data = "set_owner_manual")
 producer_button = types.InlineKeyboardButton(text = "Продюсер", callback_data = "producer")
+notify_button = types.InlineKeyboardButton(text = "Показать уведомления", callback_data = "notify_get")
+notify_set_active_button = types.InlineKeyboardButton(text = "Вкл/выкл уведомлений", callback_data = "notify_set_active")
 admin_menu_keyboard.row_width = 1
-admin_menu_keyboard.add(duty_button,set_owner_manual_button,producer_button)
+admin_menu_keyboard.add(duty_button,set_owner_manual_button,producer_button,notify_button,notify_set_active_button)
 
 document_keyboard_admin = types.InlineKeyboardMarkup()
 document_keyboard_user = types.InlineKeyboardMarkup()

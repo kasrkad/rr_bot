@@ -85,7 +85,7 @@ def create_tables() ->None:
     try:
         with SQLite() as cursor:
             cursor.execute(
-                """CREATE TABLE IF NOT EXISTS SYSTEM_NOTIFY (NOTIFY_NAME TEXT UNIQUE,NOTIFY_TIME TEXT,NOTIFY_WORK_DAY TEXT,NOTIFY_MESSAGE TEXT,NOTIFY_TARGET TEXT default system ,STATUS TEXT default False)""")
+                """CREATE TABLE IF NOT EXISTS SYSTEM_NOTIFY (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,NOTIFY_NAME TEXT UNIQUE,NOTIFY_TIME TEXT,NOTIFY_WORK_DAY TEXT,NOTIFY_MESSAGE TEXT,NOTIFY_TARGET TEXT default system ,STATUS TEXT default False, ACTIVE TEXT default True)""")
             cursor.execute(
                 """CREATE TABLE IF NOT EXISTS ADMIN_USERS (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, tg_id INT NOT NULL UNIQUE, fio TEXT NOT NULL, phone_num TEXT, duty TEXT default NO, owner TEXT default NO)""")
             cursor.execute(
@@ -100,18 +100,33 @@ def create_tables() ->None:
             "Произошла ошибка при создании таблиц", exc_info=True)
 
 
-def insert_nofity(bd_name=str, time=str, work_day=str, text=str, target = "system") -> None:
+def insert_nofity(bd_name=str, time=str, work_day=str, text=str, target = "system", active='True') -> None:
     try:
         sqlite_logger.info(f'Добавляем уведомления с именем {bd_name}')
         with SQLite() as cursor:
             cursor.execute(
-                f"""INSERT INTO SYSTEM_NOTIFY(NOTIFY_NAME,NOTIFY_TIME,NOTIFY_WORK_DAY,NOTIFY_MESSAGE,NOTIFY_TARGET)
-                    VALUES ('{bd_name}','{time}','{work_day}','{text}','{target}')""")
+                f"""INSERT INTO SYSTEM_NOTIFY(NOTIFY_NAME,NOTIFY_TIME,NOTIFY_WORK_DAY,NOTIFY_MESSAGE,NOTIFY_TARGET,ACTIVE)
+                    VALUES ('{bd_name}','{time}','{work_day}','{text}','{target}','{active}')""")
         sqlite_logger.info(f'Уведомление {bd_name} добавлено')
     except Exception as exc:
         sqlite_logger.error(
             f'Произошла ошибка при добавлении уведомления {bd_name}', exc_info=True
         )
+
+
+def set_notify_active(notify_id, active):
+    try:
+        with SQLite() as cursor:
+            sqlite_logger.info(
+                f'Изменяем статус уведомления c id = {notify_id} на {active}')
+            cursor.execute(f"""UPDATE SYSTEM_NOTIFY SET ACTIVE = '{active}' where id = '{notify_id}';""")
+            sqlite_logger.info(
+                f'Статус успешно уведомления c id = {notify_id} на {active} успешно изменен.')
+        return True
+    except Exception as exc:
+        sqlite_logger.error(f"Возникла ошибка при запросе уведомлений.",
+                            exc_info=True)
+        return False
 
 
 def get_all_notifys():
