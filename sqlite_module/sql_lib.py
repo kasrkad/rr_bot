@@ -93,6 +93,7 @@ def create_tables() ->None:
             cursor.execute("""CREATE TABLE IF NOT EXISTS ARTIFACTS (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, TIMESTAMP DATETIME DEFAULT CURRENT_TIMESTAMP, ARTIFACT_TASK TEXT NOT NULL, STAND TEXT NOT NULL, ACTION TEXT NOT NULL,TASK_COMMIT TEXT, TG_ID INT NOT NULL, COMPLETE TEXT NOT NULL default NO)""")
             cursor.execute(
                 """CREATE TABLE IF NOT EXISTS HPSM_STATUS (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, task INTEGER, rr_task INTEGER,  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)""")
+            cursor.execute("INSERT INTO HPSM_STATUS (task,rr_task,timestamp) VALUES (0,0,strftime('%s','now'));")
             sqlite_logger.info("База данных успешно создана ")
     except Exception as exc:
         print(exc)
@@ -268,12 +269,8 @@ def get_owner_or_duty_db(role='duty'):
 def write_hpsm_status_db(task_count = 0, rr_task_count = 0) -> bool:
     try:
         with SQLite() as cursor:
-            if cursor.execute("SELECT * FROM HPSM_STATUS").fetchone():
-                cursor.execute(
-                    f"UPDATE HPSM_STATUS SET task = {task_count} ,rr_task = {rr_task_count}, timestamp = strftime('%s','now') WHERE id = 1;")
-                return True
             cursor.execute(
-            f"INSERT INTO HPSM_STATUS (task,rr_task,timestamp) VALUES ({task_count},{rr_task_count},strftime('%s','now'));")
+                    f"UPDATE HPSM_STATUS SET task = {task_count} ,rr_task = {rr_task_count}, timestamp = strftime('%s','now') WHERE id = 1;")
             return True
     except Exception as exc:
         sqlite_logger.error("Произошла ошибка при записи задач HPSM, в таблицу HPSM_STATUS", exc_info=True)
