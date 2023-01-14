@@ -1,16 +1,17 @@
 from json import loads 
-from config import ESS_CHAT_ID, HPSM_REPLACE
 from sys import path
 from time import sleep
 from datetime import datetime
-from os import environ
-import logging
-import telebot
-from selenium import webdriver
+from os import environ,remove
 from threading import Thread
+import telebot
 path.append('../')
+from selenium import webdriver
+
+from logger_config.logger_data import create_logger
 from sqlite_module.sql_lib import get_owner_or_duty_db, write_hpsm_status_db
 from bot_exceptions.hpsm_exeptions import *
+from keyboards.keyboards import send_screenshot_keyboard
 
 #get env's
 HPSM_PAGE = environ["HPSM_PAGE"]
@@ -18,51 +19,60 @@ HPSM_EXIT_PAGE = environ["HPSM_EXIT_PAGE"]
 HPSM_USER = environ["HPSM_USER"]
 HPSM_PASS = environ["HPSM_PASS"]
 HPSM_CHECK_INTERVAL_SECONDS = int(environ["HPSM_CHECK_INTERVAL_SECONDS"])
+# ESS_CHAT_ID = environ["ESS_CHAT_ID"]
+ESS_CHAT_ID = '1739060486' 
 
 #configure logger
-hpsm_logger = logging.getLogger('hpsm_logger')
-hpsm_logger_formatter = logging.Formatter(
-    "%(name)s %(asctime)s %(levelname)s %(message)s")
-hpsm_logger.setLevel(logging.INFO)
-hpsm_logger_logger_handler_file = logging.FileHandler("./logs/hpsm_logger.log", 'a')
-hpsm_logger_logger_handler_file.setLevel(logging.INFO)
-hpsm_logger_logger_handler_file.setFormatter(hpsm_logger_formatter)
-hpsm_logger.addHandler(hpsm_logger_logger_handler_file)
+hpsm_logger = create_logger(__name__)
+
 
 class Hpsm_checker(Thread):
 
-    def __init__(self,bot_token:str,rr_file_path,*args,**kwargs):
+    def __init__(self,bot_token:str,rr_file_path,request_codes_file_path,*args,**kwargs):
         super().__init__(*args, **kwargs)
         self.bot_token = bot_token
         self.rr_file_path = rr_file_path
+        self.request_codes_file_path = request_codes_file_path
         self.rr_list = []
+        self.request_codes = []
 
-    def send_notification_to_channel(self,text):
+
+    def create_bot(self):
         bot = telebot.TeleBot(self.bot_token, parse_mode='MARKDOWN')
+        return bot
+
+
+    def send_notification(self,text,channel=False,duty=False,owner=False,screeshot=False):
+        bot = self.create_bot()
         duty = get_owner_or_duty_db(role='duty')
-        owner = get_owner_or_duty_db(role='owner')      
-        bot.send_message(ESS_CHAT_ID,text+f"\n[{duty['fio']}](tg://user?id={duty['tg_id']})\n[{owner['fio']}](tg://user?id={owner['tg_id']})")
-        bot.send_message(duty['tg_id'],text)
-        bot.send_message(owner['tg_id'],text)
-
-    def send_notification(self,ticket_id,regular_work_count=None):
-        bot = telebot.TeleBot(self.bot_token, parse_mode='MARKDOWN')
-        if regular_work_count:
-            hpsm_logger.info('Отправляем уведомление о кол-ве активных регламентных работ.')
-            bot.send_message(ESS_CHAT_ID,f'Внимание, кол-во не закрытых РР = {regular_work_count}!')
-            return
-
-        hpsm_logger.info(f'Отправляем уведомление о заявке {ticket_id}')
         owner = get_owner_or_duty_db(role='owner')
-        duty = get_owner_or_duty_db(role='duty')
+        keyboard = None
+        if screeshot:
+            bot.send_photo(duty['tg_id'],photo=open('screenshot_hpsm.jpg','rb'))
+            bot.send_photo(owner['tg_id'],photo=open('screenshot_hpsm.jpg','rb'))
+            keyboard = send_screenshot_keyboard
+        bot = self.create_bot()
+        if channel:
+            bot.send_message(ESS_CHAT_ID,text+f"\n[{duty['fio']}](tg://user?id={duty['tg_id']})\n[{owner['fio']}](tg://user?id={owner['tg_id']})")
+        if duty:
+            bot.send_message(duty['tg_id'],text,reply_markup=keyboard)
+        if owner:
+            bot.send_message(owner['tg_id'],text)
 
+
+    def make_screenshot(self):
+        driver = self.create_webdriver()
+        driver.get(HPSM_PAGE)
+        self.login_hpsm(driver)
+        self.wait_for_frame(driver, 80)
         try:
-            bot.send_message(ESS_CHAT_ID,f"""Заявка [{ticket_id}](https://hpsm.emias.mos.ru/sm/index.do?lang=) не взята в работу! Вызываем ответственных:
-    [{duty['fio']}](tg://user?id={duty['tg_id']})\n[{owner['fio']}](tg://user?id={owner['tg_id']})""")
-            return
+            driver.get_screenshot_as_file("screenshot_hpsm.jpg")
         except Exception as exc:
-            hpsm_logger.error(f'Произошла ошибка при отправке уведомления {ticket_id}')
-
+            hpsm_logger.error('Произошла ошибка при получении скриншота.', exc_info=True)
+            raise HpsmScreenshotError
+        driver.get('https://hpsm.emias.mos.ru/sm/goodbye.jsp?lang=')
+        driver.quit()
+    
 
     def check_tickets_for_notification(self,tickets):
         hpsm_logger.info('проверяем заявки на необходимость уведомления')
@@ -73,14 +83,16 @@ class Hpsm_checker(Thread):
         message_with_rr_count = """В работе осталось {rr_count} не закрытых РР!"""
         hpsm_logger.info('Проверяем заявки на соответствие времени уведомлений.')
         for ticket in tickets:
-            if self.check_working_time() and ticket['status'] not in ignore_statuses:
+            if self.check_working_time() and ticket['status'] not in ignore_statuses and not ticket['record_id'].startswith('C'):
                 hpsm_logger.info(f'Отправляем уведомление по заявке {ticket["status"]}')
-                self.send_notification_to_channel(text=message_for_get_request.format(ticket_id=ticket['record_id']))
+                self.send_notification(text=message_for_get_request.format(ticket_id=ticket['record_id']),channel=True,
+                owner=True,dute=True)
         rr_counter = self.get_rr_count(tickets=tickets)['rr_task_count']
-
+        
         if int(current_hour) == 17 and int(current_min) > 30 and rr_counter != 0 and self.check_working_time():
             hpsm_logger.warning(f'Отправляем уведомление по открытым РР {rr_counter}')
-            self.send_notification_to_channel(text=message_with_rr_count.format(rr_count=rr_counter))
+            self.send_notification(text=message_with_rr_count.format(rr_count=rr_counter), channel=True)
+       
 
     def create_webdriver(self):
         hpsm_logger.info('Создаем драйвер')
@@ -100,10 +112,61 @@ class Hpsm_checker(Thread):
         return False
 
 
+    def load_request_codes_from_file(self):
+        with open(self.request_codes_file_path, 'r', encoding='utf8') as request_code_file:
+            for line in request_code_file:
+                self.request_codes.append(line.strip())
+
+
     def load_rr_from_file(self):
         with open(self.rr_file_path, 'r', encoding='utf8') as rr_file:
             for line in rr_file:
                 self.rr_list.append(line.strip())
+
+
+    def wait_for_frame(self,webdriver,timeout):
+        try_counter = 1
+        hpsm_logger.info('Делаем паузу для загрузки страницы')
+        while try_counter < timeout:
+
+            try:
+                webdriver.switch_to.frame(webdriver.find_element_by_tag_name('iframe'))
+            except KeyboardInterrupt as exc:
+                hpsm_logger.error('Операция прервана пользователем')
+                webdriver.get(HPSM_EXIT_PAGE)
+                webdriver.close()
+            except Exception as exc:
+                hpsm_logger.info(f"Элемент iframe не обнаружен попытка №{try_counter}")
+                sleep(1)
+                try_counter += 1
+                continue
+            else:
+                sleep(2)
+                hpsm_logger.info(f'Количество попыток для получения списка заявок - {try_counter}')
+                break
+        else:
+            hpsm_logger.error('Фрейм с заявками не найден ')
+            self.send_notification(text=f'Заявки с HPSM не получены!!\nСледующая попытка через {HPSM_CHECK_INTERVAL_SECONDS} секунд.')
+            webdriver.get(HPSM_EXIT_PAGE)
+            webdriver.quit()
+            raise GetHpsmFrameException
+
+
+
+    def login_hpsm(self,webdriver):
+        hpsm_logger.info('Логинимся с учеткой - '+ HPSM_USER)
+        try:
+            hpsm_logger.info('Добавляем cookie на кол-во строк в странице = 50')
+            webdriver.add_cookie({'name':'pagesize','value':'50'}) 
+            webdriver.find_element_by_id('LoginUsername').send_keys(HPSM_USER)
+            webdriver.find_element_by_id('LoginPassword').send_keys(HPSM_PASS)
+            webdriver.find_element_by_id('loginBtn').click()
+            return webdriver
+        except Exception as exc:
+            webdriver.quit()
+            hpsm_logger.error(f'Произошла ошибка при логине с учетными данными {HPSM_USER}',exc_info=True)
+            print(exc.args)
+            raise HpsmLoginException
 
 
     def get_html_page(self, webdriver):
@@ -116,46 +179,11 @@ class Hpsm_checker(Thread):
             hpsm_logger.error(f'Произошла ошибка в запросе страницы {HPSM_PAGE}', exc_info=True)
             raise GetPageException
         
-        hpsm_logger.info('Добавляем cookie на кол-во строк в странице = 50')
-        webdriver.add_cookie({'name':'pagesize','value':'50'})
-        hpsm_logger.info(f'Логинимся в HPSM с учетными данными {HPSM_USER}')
+        webdriver_login = self.login_hpsm(webdriver)
         
-        try:
-            webdriver.find_element_by_id('LoginUsername').send_keys(HPSM_USER)
-            webdriver.find_element_by_id('LoginPassword').send_keys(HPSM_PASS)
-            webdriver.find_element_by_id('loginBtn').click()
-        except Exception as exc:
-            webdriver.quit()
-            hpsm_logger.error(f'Произошла ошибка при логине с учетными данными {HPSM_USER}')
-            raise HpsmLoginException
-
-        hpsm_logger.info('Делаем паузу для загрузки страницы')
-        try_counter = 1
-        while try_counter < 80:
-
-            try:
-                webdriver.switch_to.frame(webdriver.find_element_by_tag_name('iframe'))
-            except KeyboardInterrupt as exc:
-                hpsm_logger.error('Операция прервана пользователем')
-                webdriver.get(HPSM_EXIT_PAGE)
-                webdriver.close()
-            except Exception as exc:
-                hpsm_logger.info(f"Элемент iframe не обнаружен попытка №{try_counter}")
-                sleep(2)
-                try_counter += 1
-                continue
-            else:
-                sleep(2)
-                break
-        else:
-            hpsm_logger.error('Фрейм с заявками не найден ')
-            self.send_notification_to_channel(text=f'Заявки с HPSM не получены!!\nСледующая попытка через {HPSM_CHECK_INTERVAL_SECONDS} секунд.')
-            webdriver.get(HPSM_EXIT_PAGE)
-            webdriver.quit()
-            raise GetHpsmFrameException
-            
-        hpsm_logger.info(f'Количество попыток для получения списка заявок - {try_counter}')
-        hpsm_html = webdriver.page_source
+        self.wait_for_frame(webdriver_login, 80)
+        
+        hpsm_html = webdriver_login.page_source
         webdriver.get(HPSM_EXIT_PAGE)
         webdriver.close()
         hpsm_logger.info('Драйвер и соединение закрыто.')
@@ -169,7 +197,7 @@ class Hpsm_checker(Thread):
         ready_tickets = []
         raw_tickets = html_source[html_source.index(start_string)+len(start_string)+13:html_source.index(end_string)-8]
 
-        for replace_elem in HPSM_REPLACE:
+        for replace_elem in self.request_codes:
             raw_tickets = raw_tickets.replace(replace_elem,"")
         data_tickets = loads(raw_tickets)['model']['instance']
             
@@ -192,25 +220,34 @@ class Hpsm_checker(Thread):
         for ticket in tickets:
             if ticket['description'] in self.rr_list:
                 rr_counter+=1
-        return {'rr_task_count':rr_counter, 'task_count': len(tickets)-rr_counter}
+        return {'rr_task_count':rr_counter, 'task_count': (len(tickets)-rr_counter)}
 
 
     def run(self):
         while True:
             try:
+                # print('Грузим описание РР')
                 self.load_rr_from_file()
+                # print('Грузим описание кодов заявок')
+                self.load_request_codes_from_file()
+                # print('создаем драйвер,получаем заявки')
                 source = self.get_html_page(webdriver=self.create_webdriver()) 
+                # print('Парсим заявки')
                 tickets = self.parse_hpsm_html(source)
+                # print('Проверяем заявки на уведомления')
                 self.check_tickets_for_notification(tickets=tickets)
+                # print('Пишем данные в БД')
                 hpsm_logger.info('Записываем данные о заявках из HPSM в БД')
-                write_hpsm_status_db(self.get_rr_count(tickets))
-            except EmptyRequestsListReturn as e:
+                write_hpsm_status_db(**self.get_rr_count(tickets))
+                # print('Данные записаны в БД')
+            except EmptyRequestsListReturn as exc:
                 hpsm_logger.warning('Вернулся пустой список задач с HPSM.')
-                print(e)
+                print(exc,exc.args)
+            except HpsmScreenshotError as exc:
+                self.send_notification('Ошибка в получении скриншота HPSM, необходимо сделать скриншот в ручную.')
             except Exception as exc:
-                print(exc)
+                print(exc,exc.args)
                 hpsm_logger.error('Возникло необрабатываемое исключение',exc_info=True)
-                #отправка уведомления 
+                self.send_notification(text=f'Возникло необработанное исключение во время работы с заявками')
             finally:
                 sleep(HPSM_CHECK_INTERVAL_SECONDS)
- 

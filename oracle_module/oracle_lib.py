@@ -2,23 +2,14 @@ import cx_Oracle
 import os
 import logging
 import csv
-
+from logger_config.logger_data import create_logger
 #settings_import
 DEFAULT_ORACLE_USER = os.environ['DEFAULT_ORACLE_USER']
 DEFAULT_ORACLE_PASS = os.environ['DEFAULT_ORACLE_PASS']
 
 
 #logger settings
-oracle_module_logger = logging.getLogger('oracle_module_logger')
-oracle_module_logger_formatter = logging.Formatter(
-    "%(name)s %(asctime)s %(levelname)s %(message)s")
-oracle_module_logger.setLevel(logging.INFO)
-oracle_module_logger_handler_file = logging.FileHandler("./logs/oracle_module.log", 'a')
-oracle_module_logger_handler_file.setLevel(logging.INFO)
-oracle_module_logger_handler_file.setFormatter(oracle_module_logger_formatter)
-oracle_module_logger.addHandler(oracle_module_logger_handler_file)
-
-
+oracle_module_logger = create_logger(__name__)
 
 
 class OracleConnect:

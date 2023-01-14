@@ -1,19 +1,12 @@
 import sys
-import logging
 import telebot
 import threading
 sys.path.append('../')
+from logger_config.logger_data import create_logger
 from sqlite_module.sql_lib import get_all_notifys,create_tables,change_notify_status,midnight_reset_notifications,insert_nofity,get_owner_or_duty_db
 
 #configure logger
-notify_logger = logging.getLogger('notify_logger')
-notify_logger_formatter = logging.Formatter(
-    "%(name)s %(asctime)s %(levelname)s %(message)s")
-notify_logger.setLevel(logging.INFO)
-notify_logger_logger_handler_file = logging.FileHandler("./logs/notify.log", 'a')
-notify_logger_logger_handler_file.setLevel(logging.INFO)
-notify_logger_logger_handler_file.setFormatter(notify_logger_formatter)
-notify_logger.addHandler(notify_logger_logger_handler_file)
+notify_logger = create_logger(__name__)
 
 
 class Notify:

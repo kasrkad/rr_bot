@@ -1,17 +1,10 @@
 from config import PPAK_SOAP_USER
 import requests
 import os
-import logging
+from logger_config.logger_data import create_logger
 
 #configure logger
-request_to_simi_logger = logging.getLogger('request_to_simi_logger')
-request_to_simi_logger_formatter = logging.Formatter(
-    "%(name)s %(asctime)s %(levelname)s %(message)s")
-request_to_simi_logger.setLevel(logging.INFO)
-request_to_simi_logger_handler_file = logging.FileHandler("./logs/simi_request.log", 'a')
-request_to_simi_logger_handler_file.setLevel(logging.INFO)
-request_to_simi_logger_handler_file.setFormatter(request_to_simi_logger_formatter)
-request_to_simi_logger.addHandler(request_to_simi_logger_handler_file)
+request_to_simi_logger = create_logger(__name__)
 
 
 PRODUCER_SOAP_PASS = os.environ['PRODUCER_SOAP_PASS']

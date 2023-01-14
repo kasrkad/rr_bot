@@ -37,3 +37,8 @@ document_keyboard_user.row_width = 1
 document_keyboard_user.add(download_doc_dev,download_json_dev,audit_test,document_status_test)
 document_keyboard_admin.add(download_doc_dev,download_doc_ppak,download_json_dev,download_json_ppak,audit_test
                             ,audit_ppak,document_status_test,document_status_ppak)
+
+send_screenshot_keyboard = types.InlineKeyboardMarkup()
+accept_sending = types.InlineKeyboardButton(text = "Отправить скриншот", callback_data = "accept_sending")
+decine_sending  = types.InlineKeyboardButton(text = "Не отправлять", callback_data = "decine_sending")
+send_screenshot_keyboard.add(accept_sending, decine_sending)

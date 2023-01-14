@@ -1,6 +1,5 @@
 import sys
 sys.path.append('../')
-import logging
 import telebot
 from sqlite_module import sql_lib
 from asterisk_module import asterisk_lib
@@ -11,17 +10,10 @@ import re
 from simi_requests_module.bot_soap_requests import *
 from simi_requests_module.request_to_simi import *
 from oracle_module import oracle_lib
-
+from logger_config.logger_data import create_logger
 
 #configure logger
-service_bot_logger = logging.getLogger('service_bot_logger')
-service_bot_logger_formatter = logging.Formatter(
-    "%(name)s %(asctime)s %(levelname)s %(message)s")
-service_bot_logger.setLevel(logging.INFO)
-service_bot_logger_logger_handler_file = logging.FileHandler("./logs/service_bot_logger.log", 'a')
-service_bot_logger_logger_handler_file.setLevel(logging.INFO)
-service_bot_logger_logger_handler_file.setFormatter(service_bot_logger_formatter)
-service_bot_logger.addHandler(service_bot_logger_logger_handler_file)
+service_bot_logger =  create_logger(__name__)
 
 class Ess_service_bot:
 

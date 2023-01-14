@@ -57,3 +57,18 @@ class EmptyRequestsListReturn(Exception):
             return f'EmptyRequestsListReturn, {self.message}'
         else:
             return 'EmptyRequestsListReturn has been raised'
+
+
+class HpsmScreenshotError(Exception):
+
+    def __init__(self, *args):
+        if args:
+            self.message = args[0]
+        else:
+            self.message = None
+
+    def __str__(self):
+        if self.message:
+            return f'HpsmScreenshotError, {self.message}'
+        else:
+            return 'HpsmScreenshotError has been raised'

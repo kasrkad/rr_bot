@@ -1,23 +1,12 @@
 import sqlite3
 import time
-import logging
 import traceback
 import time
+from logger_config.logger_data import create_logger
+
 
 # logger create
-sqlite_logger = logging.getLogger('sqlite_logger')
-sqlite_logger_formatter = logging.Formatter(
-    "%(name)s %(asctime)s %(levelname)s %(message)s")
-sqlite_logger.setLevel(logging.INFO)
-sqlite_logger_handler_file = logging.FileHandler("./logs/db_work.log", 'a')
-sqlite_logger_handler_file.setLevel(logging.INFO)
-sqlite_logger_handler_file.setFormatter(sqlite_logger_formatter)
-sqlite_logger_handler_stream = logging.StreamHandler()
-sqlite_logger_handler_stream.setLevel(logging.ERROR)
-sqlite_logger_handler_stream.setFormatter(sqlite_logger_formatter)
-
-sqlite_logger.addHandler(sqlite_logger_handler_file)
-sqlite_logger.addHandler(sqlite_logger_handler_stream)
+sqlite_logger = create_logger(__name__) 
 
 
 class SQLite:
@@ -270,7 +259,7 @@ def write_hpsm_status_db(task_count = 0, rr_task_count = 0) -> bool:
     try:
         with SQLite() as cursor:
             cursor.execute(
-                    f"UPDATE HPSM_STATUS SET task = {task_count} ,rr_task = {rr_task_count}, timestamp = strftime('%s','now') WHERE id = 1;")
+                    f"UPDATE HPSM_STATUS SET task = '{task_count}' , rr_task = '{rr_task_count}' , timestamp = strftime('%s','now') WHERE id = 1;")
             return True
     except Exception as exc:
         sqlite_logger.error("Произошла ошибка при записи задач HPSM, в таблицу HPSM_STATUS", exc_info=True)
