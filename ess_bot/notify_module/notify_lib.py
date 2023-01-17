@@ -1,9 +1,7 @@
-import sys
 import telebot
 import threading
-sys.path.append('../')
-from logger_config.logger_data import create_logger
-from sqlite_module.sql_lib import get_all_notifys,create_tables,change_notify_status,midnight_reset_notifications,insert_nofity,get_owner_or_duty_db
+from ..logger_config.logger_data import create_logger
+from ..sqlite_module.sql_lib import get_all_notifys,change_notify_status,midnight_reset_notifications,get_owner_or_duty_db
 
 #configure logger
 notify_logger = create_logger(__name__)

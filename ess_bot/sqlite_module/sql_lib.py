@@ -2,7 +2,7 @@ import sqlite3
 import time
 import traceback
 import time
-from logger_config.logger_data import create_logger
+from ..logger_config.logger_data import create_logger
 
 
 # logger create

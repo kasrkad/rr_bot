@@ -1,16 +1,14 @@
-import sys
-sys.path.append('../')
 import telebot
-from sqlite_module import sql_lib
-from asterisk_module import asterisk_lib
+from ..sqlite_module import sql_lib
+from ..asterisk_module import asterisk_lib
 from config import *
 import os
-from keyboards import keyboards
+from ..keyboards import keyboards
 import re
-from simi_requests_module.bot_soap_requests import *
-from simi_requests_module.request_to_simi import *
-from oracle_module import oracle_lib
-from logger_config.logger_data import create_logger
+from ..simi_requests_module.bot_soap_requests import *
+from ..simi_requests_module.request_to_simi import *
+from ..oracle_module import oracle_lib
+from ..logger_config.logger_data import create_logger
 
 #configure logger
 service_bot_logger =  create_logger(__name__)
@@ -81,7 +79,7 @@ class Ess_service_bot:
                 current_duty= sql_lib.get_owner_or_duty_db(role='duty')
                 sql_lib.set_owner_or_duty_db(message.from_user.id)
                 new_duty = sql_lib.get_owner_or_duty_db(role='duty')
-                # set_duty_phone(return_phone_num_db(message.from_user.id))
+                asterisk_lib.set_duty_phone(sql_lib.return_phone_num_db(message.from_user.id))
                 self.bot.send_message(message.from_user.id, f'Предыдущий дежурный - [{current_duty["fio"]}](tg://user?id={current_duty["tg_id"]}),\nновый дежурный - [{new_duty["fio"]}](tg://user?id={new_duty["tg_id"]})')
             except Exception as exc:
                 service_bot_logger.error(f'Ошибка при установке дежурного {exc}')
@@ -147,7 +145,7 @@ class Ess_service_bot:
             service_bot_logger.info(f'Запрошено пересоздание продюсера')
             try:
                 self.bot.send_message(message.from_user.id,'Запущено пересоздание продюсера.')
-                print('agressive recreating')
+                print('agressive recreating')# Добавить пересоздание продьюсеров!!!!!
                 self.bot.send_message(message.from_user.id, 'Пересоздание завершено.')
             except Exception as exc:
                 service_bot_logger.error(f'Произошла ошибка при пересоздании продюсера, запрос от {message.from_user.id}.', exc_info=True)

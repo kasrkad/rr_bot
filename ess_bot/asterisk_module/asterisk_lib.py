@@ -1,16 +1,9 @@
-import sys
-sys.path.append('../')
-import logging
+import requests
+from .asterisk_config import ASTERISK_PASS,ASTERISK_LOGIN
+from ..logger_config.logger_data import create_logger
+from ..bot_exceptions.asterisk_exceptions import FailAcceptNewDutyPhone,FailToChangeDutyPhone
 
-
-asterisk_logger = logging.getLogger('asterisk_logger')
-asterisk_logger_formatter = logging.Formatter(
-    "%(name)s %(asctime)s %(levelname)s %(message)s")
-asterisk_logger.setLevel(logging.INFO)
-asterisk_logger_handler_file = logging.FileHandler("./logs/service_work.log", 'a')
-asterisk_logger_handler_file.setLevel(logging.INFO)
-asterisk_logger_handler_file.setFormatter(asterisk_logger_formatter)
-
+asterisk_logger = create_logger(__name__)
 
 
 ASTERISK_PAYLOAD = {
@@ -34,12 +27,8 @@ ASTERISK_PAYLOAD = {
 }
 
 def set_duty_phone(phone_for_set:str):
-    import requests
-    from config import ASTERISK_LOGIN, ASTERISK_PASS
     ASTERISK_GROUP = 'https://pbx/config.php?display=ringgroups&extdisplay=GRP-627'
-
     ASTERSK_HEADERS = {'Referer':'https://pbx/config.php?display=ringgroups&extdisplay=GRP-627'}
-
     ASTERISK_LOGIN_DATA = {"input_user": ASTERISK_LOGIN, "input_pass": ASTERISK_PASS, "submit_login": "Submit"}
     try:
         asterisk_logger.info(f"Запрос на смену номера дежурного в Asterisk на {phone_for_set}")
@@ -49,11 +38,17 @@ def set_duty_phone(phone_for_set:str):
         request_session = requests.Session()
         auth = request_session.post('https://pbx/index.php',data=ASTERISK_LOGIN_DATA,
                                     verify=False)
-        set_duty_phone_request = request_session.post(ASTERISK_GROUP, data=payload_for_set,cookies=r.cookies,
+        set_duty_phone_request = request_session.post(ASTERISK_GROUP, data=payload_for_set,cookies=request_session.cookies,
                                         headers=ASTERSK_HEADERS,
                                         verify=False,
                                         allow_redirects=True)
+        if set_duty_phone_request.status_code != 200:
+            asterisk_logger.error(f'Ошибка при смене номера дежурного код - {set_duty_phone_request.status_code}')
+            raise FailToChangeDutyPhone('Ошибка при смене номера дежурного')
         reload_asterisk_settings = request_session.post(ASTERISK_GROUP, data=reload_asterisk_settings_data, verify=False)
+        if reload_asterisk_settings.status_code != 200:
+            asterisk_logger.error(f'Ошибка при примененнии номера дежурного код - {reload_asterisk_settings.status_code}')
+            raise FailAcceptNewDutyPhone('Ошибка при примененнии номера дежурного код')
         asterisk_logger.info("Запрос успешно обработан")
     except Exception as exc:
         asterisk_logger.error("Произошла ошибка при смене номера дежурного")

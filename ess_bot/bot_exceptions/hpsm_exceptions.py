@@ -72,3 +72,5 @@ class HpsmScreenshotError(Exception):
             return f'HpsmScreenshotError, {self.message}'
         else:
             return 'HpsmScreenshotError has been raised'
+
+

@@ -1,7 +1,7 @@
 from config import PPAK_SOAP_USER
 import requests
 import os
-from logger_config.logger_data import create_logger
+from ..logger_config.logger_data import create_logger
 
 #configure logger
 request_to_simi_logger = create_logger(__name__)

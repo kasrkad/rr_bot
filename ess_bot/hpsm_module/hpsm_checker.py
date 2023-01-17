@@ -1,24 +1,13 @@
 from json import loads 
-from sys import path
 from time import sleep
 from datetime import datetime
-from os import environ,remove
 from threading import Thread
 import telebot
-path.append('../')
 from selenium import webdriver
-
-from logger_config.logger_data import create_logger
-from sqlite_module.sql_lib import get_owner_or_duty_db, write_hpsm_status_db
-from bot_exceptions.hpsm_exeptions import *
-
-#get env's
-HPSM_PAGE = environ["HPSM_PAGE"]
-HPSM_EXIT_PAGE = environ["HPSM_EXIT_PAGE"]
-HPSM_USER = environ["HPSM_USER"]
-HPSM_PASS = environ["HPSM_PASS"]
-HPSM_CHECK_INTERVAL_SECONDS = int(environ["HPSM_CHECK_INTERVAL_SECONDS"])
-ESS_CHAT_ID = environ["ESS_CHAT_ID"]
+from ..logger_config.logger_data import create_logger
+from ..sqlite_module.sql_lib import get_owner_or_duty_db, write_hpsm_status_db
+from ..bot_exceptions.hpsm_exceptions import *
+from .hpsm_config import *
 
 #configure logger
 hpsm_logger = create_logger(__name__)
@@ -48,7 +37,6 @@ class Hpsm_checker(Thread):
         if screeshot:
             bot.send_photo(duty['tg_id'],photo=open('screenshot_hpsm.jpg','rb'))
             bot.send_photo(owner['tg_id'],photo=open('screenshot_hpsm.jpg','rb'))
-            keyboard = send_screenshot_keyboard
         bot = self.create_bot()
         if channel:
             bot.send_message(ESS_CHAT_ID,text+f"\n[{duty['fio']}](tg://user?id={duty['tg_id']})\n[{owner['fio']}](tg://user?id={owner['tg_id']})")

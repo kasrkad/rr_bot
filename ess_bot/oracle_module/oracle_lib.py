@@ -1,8 +1,8 @@
 import cx_Oracle
 import os
-import logging
 import csv
-from logger_config.logger_data import create_logger
+from ..logger_config.logger_data import create_logger
+
 #settings_import
 DEFAULT_ORACLE_USER = os.environ['DEFAULT_ORACLE_USER']
 DEFAULT_ORACLE_PASS = os.environ['DEFAULT_ORACLE_PASS']
