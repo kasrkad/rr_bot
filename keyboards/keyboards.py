@@ -15,9 +15,10 @@ duty_button = types.InlineKeyboardButton(text = "Дежурю", callback_data = 
 set_owner_manual_button = types.InlineKeyboardButton(text = "Назначение на HPSM", callback_data = "set_owner_manual")
 producer_button = types.InlineKeyboardButton(text = "Продюсер", callback_data = "producer")
 notify_button = types.InlineKeyboardButton(text = "Показать уведомления", callback_data = "notify_get")
+accept_sending = types.InlineKeyboardButton(text = "Отправить скриншот", callback_data = "accept_sending")
 notify_set_active_button = types.InlineKeyboardButton(text = "Вкл/выкл уведомлений", callback_data = "notify_set_active")
 admin_menu_keyboard.row_width = 1
-admin_menu_keyboard.add(duty_button,set_owner_manual_button,producer_button,notify_button,notify_set_active_button)
+admin_menu_keyboard.add(duty_button,set_owner_manual_button,producer_button,notify_button,notify_set_active_button,accept_sending)
 
 document_keyboard_admin = types.InlineKeyboardMarkup()
 document_keyboard_user = types.InlineKeyboardMarkup()
@@ -37,8 +38,3 @@ document_keyboard_user.row_width = 1
 document_keyboard_user.add(download_doc_dev,download_json_dev,audit_test,document_status_test)
 document_keyboard_admin.add(download_doc_dev,download_doc_ppak,download_json_dev,download_json_ppak,audit_test
                             ,audit_ppak,document_status_test,document_status_ppak)
-
-send_screenshot_keyboard = types.InlineKeyboardMarkup()
-accept_sending = types.InlineKeyboardButton(text = "Отправить скриншот", callback_data = "accept_sending")
-decine_sending  = types.InlineKeyboardButton(text = "Не отправлять", callback_data = "decine_sending")
-send_screenshot_keyboard.add(accept_sending, decine_sending)

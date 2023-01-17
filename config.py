@@ -1,5 +1,6 @@
 #!/bin/python3
 from os import environ
+
 DEV_SOAP_URL = environ['DEV_SOAP_URL']
 #Настройки для пересоздания ЕСУ_Продюсера
 PRODUCER_SOAP_USER = environ['PRODUCER_SOAP_USER']
@@ -52,12 +53,14 @@ PREDPPAK_SIMI_IP = environ['PREDPPAK_SIMI_IP']
 PREDPPAK_READ_DOC_CONNECTION_STRING = environ['PREDPPAK_READ_DOC_CONNECTION_STRING']
 PREDPPAK_READ_BE_IP = environ['PREDPPAK_READ_BE_IP']
 PREDPPAK_READ_SIMI_IP = environ['PREDPPAK_READ_SIMI_IP']
+
 #Настройки для офисных стендов
 #75
 BE_IP_75 = environ['BE_IP_75']
 ORACLE_75 = environ['ORACLE_75']
 SIMI_IP_75 = environ['SIMI_IP_75']
 #71
+
 BE_IP_71 = environ['BE_IP_71']
 ORACLE_71 = environ['ORACLE_71']
 SIMI_IP_71 = environ['SIMI_IP_71']
@@ -81,7 +84,7 @@ HPSM_EXIT = 'https://hpsm.emias.mos.ru/sm/goodbye.jsp?lang='
 
 HPSM_REPLACE = [
         "_{_VALUE_}_request",
-		"_{_VALUE_}_AS392",
+	"_{_VALUE_}_AS392",
         "_{_VALUE_}_4",
         "_{_VALUE_}_AS203",
         "_{_VALUE_}_In work",

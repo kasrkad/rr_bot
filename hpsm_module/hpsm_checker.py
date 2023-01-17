@@ -11,7 +11,6 @@ from selenium import webdriver
 from logger_config.logger_data import create_logger
 from sqlite_module.sql_lib import get_owner_or_duty_db, write_hpsm_status_db
 from bot_exceptions.hpsm_exeptions import *
-from keyboards.keyboards import send_screenshot_keyboard
 
 #get env's
 HPSM_PAGE = environ["HPSM_PAGE"]
@@ -19,8 +18,7 @@ HPSM_EXIT_PAGE = environ["HPSM_EXIT_PAGE"]
 HPSM_USER = environ["HPSM_USER"]
 HPSM_PASS = environ["HPSM_PASS"]
 HPSM_CHECK_INTERVAL_SECONDS = int(environ["HPSM_CHECK_INTERVAL_SECONDS"])
-# ESS_CHAT_ID = environ["ESS_CHAT_ID"]
-ESS_CHAT_ID = '1739060486' 
+ESS_CHAT_ID = environ["ESS_CHAT_ID"]
 
 #configure logger
 hpsm_logger = create_logger(__name__)
@@ -81,17 +79,21 @@ class Hpsm_checker(Thread):
         ignore_statuses = ['В работе','Отложен','Ожидание','Подготовка Отчета']
         message_for_get_request = """Заявка [{ticket_id}](https://hpsm.emias.mos.ru/sm/index.do?lang=) не взята в работу!"""
         message_with_rr_count = """В работе осталось {rr_count} не закрытых РР!"""
-        hpsm_logger.info('Проверяем заявки на соответствие времени уведомлений.')
+        hpsm_logger.info(f'Проверяем заявки на соответствие времени уведомлений {current_hour} : {current_min}.')
         for ticket in tickets:
-            if self.check_working_time() and ticket['status'] not in ignore_statuses and not ticket['record_id'].startswith('C'):
-                hpsm_logger.info(f'Отправляем уведомление по заявке {ticket["status"]}')
+            if self.check_working_time() and ticket['status'] not in ignore_statuses and not(ticket['record_id'].startswith('C') or ticket['record_id'].startswith('T')):
+                hpsm_logger.info(f'Отправляем уведомление по заявке {ticket["record_id"]}')
                 self.send_notification(text=message_for_get_request.format(ticket_id=ticket['record_id']),channel=True,
-                owner=True,dute=True)
+                owner=True,duty=True)
         rr_counter = self.get_rr_count(tickets=tickets)['rr_task_count']
-        
-        if int(current_hour) == 17 and int(current_min) > 30 and rr_counter != 0 and self.check_working_time():
+        hpsm_logger.info(f'Кол-во РР = {rr_counter} сработка условий- '+ str(int(current_hour) == 17 and int(current_min) > 30) and rr_counter != 0 and self.check_working_time())
+        if (int(current_hour) == 17 and int(current_min) > 30) and rr_counter != 0 and self.check_working_time():
             hpsm_logger.warning(f'Отправляем уведомление по открытым РР {rr_counter}')
             self.send_notification(text=message_with_rr_count.format(rr_count=rr_counter), channel=True)
+        
+        if int(current_hour) == 17 and int(current_min) > 45 and rr_counter != 0 and self.check_working_time():
+            hpsm_logger.warning(f'Делаем скриншот hpsm. Время снятия - {current_hour} : {current_min}.')
+            self.make_screenshot()
        
 
     def create_webdriver(self):
@@ -145,12 +147,10 @@ class Hpsm_checker(Thread):
                 hpsm_logger.info(f'Количество попыток для получения списка заявок - {try_counter}')
                 break
         else:
-            hpsm_logger.error('Фрейм с заявками не найден ')
-            self.send_notification(text=f'Заявки с HPSM не получены!!\nСледующая попытка через {HPSM_CHECK_INTERVAL_SECONDS} секунд.')
+            hpsm_logger.error('Фрейм с заявками не найден')
             webdriver.get(HPSM_EXIT_PAGE)
             webdriver.quit()
             raise GetHpsmFrameException
-
 
 
     def login_hpsm(self,webdriver):
@@ -180,9 +180,7 @@ class Hpsm_checker(Thread):
             raise GetPageException
         
         webdriver_login = self.login_hpsm(webdriver)
-        
         self.wait_for_frame(webdriver_login, 80)
-        
         hpsm_html = webdriver_login.page_source
         webdriver.get(HPSM_EXIT_PAGE)
         webdriver.close()
@@ -226,20 +224,16 @@ class Hpsm_checker(Thread):
     def run(self):
         while True:
             try:
-                # print('Грузим описание РР')
                 self.load_rr_from_file()
-                # print('Грузим описание кодов заявок')
                 self.load_request_codes_from_file()
-                # print('создаем драйвер,получаем заявки')
                 source = self.get_html_page(webdriver=self.create_webdriver()) 
-                # print('Парсим заявки')
                 tickets = self.parse_hpsm_html(source)
-                # print('Проверяем заявки на уведомления')
                 self.check_tickets_for_notification(tickets=tickets)
-                # print('Пишем данные в БД')
                 hpsm_logger.info('Записываем данные о заявках из HPSM в БД')
                 write_hpsm_status_db(**self.get_rr_count(tickets))
-                # print('Данные записаны в БД')
+            except GetHpsmFrameException as exc:
+                hpsm_logger.error('Произошла ошибка при получении заявок с HPSM.')
+                self.send_notification(text=f'Ошибка при получении заявок с HPSM следующая попытка через {HPSM_CHECK_INTERVAL_SECONDS} секунд.', channel=True)
             except EmptyRequestsListReturn as exc:
                 hpsm_logger.warning('Вернулся пустой список задач с HPSM.')
                 print(exc,exc.args)
@@ -248,6 +242,6 @@ class Hpsm_checker(Thread):
             except Exception as exc:
                 print(exc,exc.args)
                 hpsm_logger.error('Возникло необрабатываемое исключение',exc_info=True)
-                self.send_notification(text=f'Возникло необработанное исключение во время работы с заявками')
+                self.send_notification(text=f'Возникло необработанное исключение во время работы с заявками',channel=True)
             finally:
                 sleep(HPSM_CHECK_INTERVAL_SECONDS)
