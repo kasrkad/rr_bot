@@ -1,4 +1,4 @@
-import cx_Oracle
+import oracledb
 import os
 import csv
 from ..logger_config.logger_data import create_logger
@@ -15,7 +15,8 @@ class OracleConnect:
         
     def __enter__(self):
         try:
-            self.oracle_connection = cx_Oracle.connect(self.oracle_user,self.oracle_password, self.oracle_connection_string, encoding='UTF-8')
+            self.oracle_connection = oracledb.connect(user=self.oracle_user,password=self.oracle_password,
+                                                        dsn=self.oracle_connection_string, encoding='UTF-8')
             oracle_module_logger.info("Соединение с бд установлено")
             return self.oracle_connection.cursor()
         except Exception as exc:
@@ -50,10 +51,10 @@ def get_audit_for_document(oracle_connection_string,oracle_user=None,oracle_pass
     return audit_path_for_send
 
 
-def get_document_metadata_status(oracle_connection_string, documents = list):
+def get_document_metadata_status(oracle_connection_string, oracle_user=None,oracle_password=None, documents = list):
     oracle_module_logger.info(f'Был запрошен статус документов {"".join(doc.strip() for doc in documents)}')
     documents_metadata = {}
-    with OracleConnect(oracle_connection_string,oracle_user=oracle_user, oracle_password=oracle_password)as cursor:
+    with OracleConnect(oracle_connection_string, oracle_user=oracle_user, oracle_password=oracle_password)as cursor:
         for doc in documents:
             try:
                 data = cursor.execute(f"""select id, CASE STATUS WHEN 2 then 'Подписан' when 3 then 'Аннулирован' when 1 then 'Черновик' when 0 then 'Создан' END from METADATA where id = '{doc.strip()}'""").fetchone()

@@ -30,12 +30,12 @@ class Notifyer(threading.Thread):
         notify_logger.info(f'Отправляем уведомление {notify_obj._bd_name}.')
         try:
             from config import ESS_CHAT_ID
-            bot = telebot.TeleBot(self.bot_token)
+            bot = telebot.TeleBot(self.bot_token, parse_mode='MARKDOWN')
             duty_engeneer = get_owner_or_duty_db('duty')
             hpsm_owner = get_owner_or_duty_db('owner')
             if notify_obj._target == 'system':
-                bot.send_message(ESS_CHAT_ID,notify_obj.format(duty_engeneer=f"[{duty_engeneer['fio']}](tg://user?id={duty_engeneer['tg_id']}",
-                hpsm_owner=f"[{hpsm_owner['fio']}](tg://user?id={hpsm_owner['tg_id']}"))
+                bot.send_message(ESS_CHAT_ID,notify_obj._text + f"\n[{duty_engeneer['fio']}](tg://user?id={duty_engeneer['tg_id']}),\n\
+[{hpsm_owner['fio']}](tg://user?id={hpsm_owner['tg_id']})")
             else:
                 bot.send_message(duty_engeneer['tg_id'],notify_obj._text)
             notify_logger.info(f'Уведомление {notify_obj._bd_name}, успешно отправлено.')

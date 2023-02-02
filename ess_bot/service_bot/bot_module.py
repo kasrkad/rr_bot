@@ -1,10 +1,11 @@
 import telebot
+import re
+from datetime import datetime
+import os
 from ..sqlite_module import sql_lib
 from ..asterisk_module import asterisk_lib
 from config import *
-import os
 from ..keyboards import keyboards
-import re
 from ..simi_requests_module.bot_soap_requests import *
 from ..simi_requests_module.request_to_simi import *
 from ..oracle_module import oracle_lib
@@ -20,7 +21,7 @@ class Ess_service_bot:
         self.bot = telebot.TeleBot(bot_token, parse_mode='MARKDOWN')
         self.document_regexp = r"[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}"
         self.main_menu_call_data = ['contacts','help','admin_menu','notify_get']
-        self.admin_menu_call_data = ['producer','set_owner_manual','duty','notify_set_active']
+        self.admin_menu_call_data = ['producer','set_owner_manual','duty','notify_set_active','status_hpsm']
         self.documents_call_data = ['download_doc_test','download_json_test','audit_test', 
                                     'status_test','download_doc_ppak','download_json_ppak',
                                     'audit_ppak','status_ppak'] 
@@ -138,7 +139,7 @@ class Ess_service_bot:
             else:
                 raise ValueError
 
-        @self.bot.message_handler(commands=['/producer'])
+        @self.bot.message_handler(commands=['producer'])
         @self.permissions_decorator
         def producer_recreate(message):
             service_bot_logger.info(f'Запрошено пересоздание продьюсера')
@@ -166,7 +167,7 @@ class Ess_service_bot:
                 service_bot_logger.error(f'Произошла ошибка при запросе контактов от {message.from_user.id}', exc_info=True)
 
         @self.permissions_decorator
-        @self.bot.message_handler(commands=['/notify_get'])
+        @self.bot.message_handler(commands=['notify_get'])
         def notify_get(message):
             service_bot_logger.info(f'Пользователем {message.from_user.id} запрошены уведомления.')
             try:
@@ -185,7 +186,7 @@ class Ess_service_bot:
 
 
         @self.permissions_decorator
-        @self.bot.message_handler(commands=['/change_notify_status'])
+        @self.bot.message_handler(commands=['change_notify_status'])
         def change_notify_status_dialogue(message):
             service_bot_logger.info(f'Пользовтелем {message.from_user.id} запрошено изменение состояния уведомления.')
             notify_get(message)
@@ -278,6 +279,16 @@ class Ess_service_bot:
                     self.bot.send_message(call.from_user.id, 'Вовремя операции с документом произошла ошибка.')
 
 
+        @self.bot.message_handler(commands=['status'])
+        @self.permissions_decorator
+        def status(message):
+            hpsm_status = sql_lib.get_hpsm_status_db()
+            time_from_last_check = datetime.fromtimestamp(hpsm_status['timestamp'])
+            self.bot.send_message(message.from_user.id,f'Общее кол-во заявок:{hpsm_status["tasks"]}\n\
+Кол-во РР: {hpsm_status["rr_task"]}\n\
+Время последней проверки: {time_from_last_check.strftime("%H:%M")}\n\
+Дежурный и координатор доступны по команде /contacts')
+
         @self.bot.message_handler(commands=['/adminPanel'])
         @self.permissions_decorator
         def show_admin_panel(message):
@@ -314,6 +325,8 @@ class Ess_service_bot:
                     producer_recreate(call)
                 if call.data == 'notify_set_active':
                     change_notify_status_dialogue(call)
+                if call.data == 'status_hpsm':
+                    status(call)
             except Exception as exc:
                 service_bot_logger.error(f'Во время операции произошла ошибка',exc_info=True)
                 self.bot.send_message(call.from_user.id,'Во время операции произошла ошибка.')
@@ -323,7 +336,7 @@ class Ess_service_bot:
         try:
             service_bot_logger.info('Запускаем бота')
             self.bot_commads()
-            self.bot_send_message(ESS_CHAT_ID,'Сервис бот запущен')
+            # self.bot.send_message(ESS_CHAT_ID,'Сервис бот запущен')
             self.bot.polling(none_stop=True, interval=0, timeout=20)
         except Exception as exc:
             service_bot_logger.error(f'Ошибка при запуске бота', exc_info=True)

@@ -15,7 +15,7 @@ hpsm_logger = create_logger(__name__)
 
 class Hpsm_checker(Thread):
 
-    def __init__(self,bot_token:str,rr_file_path,request_codes_file_path,*args,**kwargs):
+    def __init__(self,bot_token:str, rr_file_path:str, request_codes_file_path:str, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.bot_token = bot_token
         self.rr_file_path = rr_file_path
@@ -34,16 +34,19 @@ class Hpsm_checker(Thread):
         duty = get_owner_or_duty_db(role='duty')
         owner = get_owner_or_duty_db(role='owner')
         keyboard = None
-        if screeshot:
-            bot.send_photo(duty['tg_id'],photo=open('screenshot_hpsm.jpg','rb'))
-            bot.send_photo(owner['tg_id'],photo=open('screenshot_hpsm.jpg','rb'))
-        bot = self.create_bot()
-        if channel:
-            bot.send_message(ESS_CHAT_ID,text+f"\n[{duty['fio']}](tg://user?id={duty['tg_id']})\n[{owner['fio']}](tg://user?id={owner['tg_id']})")
-        if duty:
-            bot.send_message(duty['tg_id'],text,reply_markup=keyboard)
-        if owner:
-            bot.send_message(owner['tg_id'],text)
+        if duty and owner:
+            if screeshot :
+                bot.send_photo(duty['tg_id'],photo=open('screenshot_hpsm.jpg','rb'))
+                bot.send_photo(owner['tg_id'],photo=open('screenshot_hpsm.jpg','rb'))
+            bot = self.create_bot()
+            if channel:
+                bot.send_message(ESS_CHAT_ID,text+f"\n[{duty['fio']}](tg://user?id={duty['tg_id']})\n[{owner['fio']}](tg://user?id={owner['tg_id']})")
+            if duty:
+                bot.send_message(duty['tg_id'],text,reply_markup=keyboard)
+            if owner:
+                bot.send_message(owner['tg_id'],text)
+        else:
+            self.send_notification(text="Требуется установить дежурного и ответственного за HPSM.", channel=True)
 
 
     def make_screenshot(self):
@@ -53,7 +56,7 @@ class Hpsm_checker(Thread):
         self.wait_for_frame(driver, 80)
         try:
             driver.get_screenshot_as_file("screenshot_hpsm.jpg")
-        except Exception as exc:
+        except Exception:
             hpsm_logger.error('Произошла ошибка при получении скриншота.', exc_info=True)
             raise HpsmScreenshotError
         driver.get('https://hpsm.emias.mos.ru/sm/goodbye.jsp?lang=')
@@ -68,6 +71,7 @@ class Hpsm_checker(Thread):
         message_for_get_request = """Заявка [{ticket_id}](https://hpsm.emias.mos.ru/sm/index.do?lang=) не взята в работу!"""
         message_with_rr_count = """В работе осталось {rr_count} не закрытых РР!"""
         hpsm_logger.info(f'Проверяем заявки на соответствие времени уведомлений {current_hour} : {current_min}.')
+
         for ticket in tickets:
             if self.check_working_time() and ticket['status'] not in ignore_statuses and not(ticket['record_id'].startswith('C') or ticket['record_id'].startswith('T')):
                 hpsm_logger.info(f'Отправляем уведомление по заявке {ticket["record_id"]}')
@@ -75,16 +79,18 @@ class Hpsm_checker(Thread):
                 owner=True,duty=True)
         rr_counter = self.get_rr_count(tickets=tickets)['rr_task_count']
         hpsm_logger.info(f'Кол-во РР = {rr_counter} сработка условий - '+ str(int(current_hour) == 17 and int(current_min) > 30 and rr_counter != 0 and self.check_working_time()))
+        
         if (int(current_hour) == 17 and int(current_min) > 30) and rr_counter != 0 and self.check_working_time():
             hpsm_logger.warning(f'Отправляем уведомление по открытым РР {rr_counter}')
             self.send_notification(text=message_with_rr_count.format(rr_count=rr_counter), channel=True)
         
-        if (int(current_hour) == 17 and int(current_min) > 45 and rr_counter != 0 and self.check_working_time()) or (int(current_hour) == 21 
-        and int(current_min) > 45 and rr_counter != 0 and self.check_working_time()) :
-
+        if (int(current_hour) == 17 and int(current_min) > 45 and rr_counter != 0 and self.check_working_time()):
             hpsm_logger.warning(f'Делаем скриншот hpsm. Время снятия - {current_hour} : {current_min}.')
             self.make_screenshot()
        
+        if (int(current_hour) == 21 and int(current_min) > 45 and rr_counter != 0 and self.check_working_time()):
+            hpsm_logger.warning(f'Делаем скриншот hpsm. Время снятия - {current_hour} : {current_min}.')
+            self.make_screenshot()
 
     def create_webdriver(self):
         hpsm_logger.info('Создаем драйвер')
@@ -123,11 +129,11 @@ class Hpsm_checker(Thread):
 
             try:
                 webdriver.switch_to.frame(webdriver.find_element_by_tag_name('iframe'))
-            except KeyboardInterrupt as exc:
+            except KeyboardInterrupt:
                 hpsm_logger.error('Операция прервана пользователем')
                 webdriver.get(HPSM_EXIT_PAGE)
                 webdriver.close()
-            except Exception as exc:
+            except Exception:
                 hpsm_logger.info(f"Элемент iframe не обнаружен попытка №{try_counter}")
                 sleep(1)
                 try_counter += 1
@@ -159,12 +165,12 @@ class Hpsm_checker(Thread):
             raise HpsmLoginException
 
 
-    def get_html_page(self, webdriver):
+    def get_html_page(self, webdriver)-> str:
         hpsm_logger.info(f'Запрашиваем страницу {HPSM_PAGE}')
         
         try:
             webdriver.get(HPSM_PAGE)
-        except Exception as exc:
+        except Exception:
             webdriver.quit()
             hpsm_logger.error(f'Произошла ошибка в запросе страницы {HPSM_PAGE}', exc_info=True)
             raise GetPageException

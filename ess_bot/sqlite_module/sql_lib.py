@@ -33,7 +33,7 @@ def insert_admin(tg_id=None, fio=None, phone_num=None, duty='NO' ,owner='NO'):
                 f"""INSERT INTO ADMIN_USERS(tg_id,fio,phone_num,duty,owner)
                     VALUES ('{tg_id}','{fio}','{phone_num}','{duty}','{owner}')""")
         sqlite_logger.info(f'Администратор {tg_id}-{fio} добавлен.')
-    except Exception as exc:
+    except Exception:
         sqlite_logger.error(
             f'Произошла ошибка при добавлении администратора {tg_id}-{fio}', exc_info=True)
 
@@ -50,7 +50,7 @@ def load_standard_notify_from_file(path_to_file_with_notifycations):
                 sqlite_logger.info('Базовые уведомления успешно загружены.')
                 return
             sqlite_logger.info(f'Не задан файл со стандартными уведомлениями, нечего загружать')
-        except Exception as exc:
+        except Exception:
             sqlite_logger.error('Ошибка загрузки стандартных уведомлений', exc_info=True)
 
 
@@ -66,7 +66,7 @@ def load_admin_from_json(path_to_admin_file):
             sqlite_logger.info('Администраторы успешно загружены.')
             return
         sqlite_logger.info(f'Не указан файл путь к файлу с администраторами')    
-    except Exception as exc:
+    except Exception:
         sqlite_logger.error(f'Произошла ошибка при загрузке администраторов из {path_to_admin_file}', exc_info=True)
 
 
@@ -82,7 +82,7 @@ def create_tables() ->None:
             cursor.execute("""CREATE TABLE IF NOT EXISTS ARTIFACTS (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, TIMESTAMP DATETIME DEFAULT CURRENT_TIMESTAMP, ARTIFACT_TASK TEXT NOT NULL, STAND TEXT NOT NULL, ACTION TEXT NOT NULL,TASK_COMMIT TEXT, TG_ID INT NOT NULL, COMPLETE TEXT NOT NULL default NO)""")
             cursor.execute(
                 """CREATE TABLE IF NOT EXISTS HPSM_STATUS (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, task INTEGER, rr_task INTEGER,  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)""")
-            cursor.execute("INSERT INTO HPSM_STATUS (task,rr_task,timestamp) VALUES (0,0,strftime('%s','now'));")
+            cursor.execute("INSERT INTO HPSM_STATUS (id,task,rr_task,timestamp) VALUES (1,0,0,strftime('%s','now'));")
             sqlite_logger.info("База данных успешно создана ")
     except Exception as exc:
         print(exc)
@@ -90,7 +90,7 @@ def create_tables() ->None:
             "Произошла ошибка при создании таблиц", exc_info=True)
 
 
-def insert_nofity(bd_name=str, time=str, work_day=str, text=str, target = "system", active='True') -> None:
+def insert_nofity(bd_name:str, time:str, work_day:str, text:str, target = "system", active='True') -> None:
     try:
         sqlite_logger.info(f'Добавляем уведомления с именем {bd_name}')
         with SQLite() as cursor:
@@ -98,13 +98,13 @@ def insert_nofity(bd_name=str, time=str, work_day=str, text=str, target = "syste
                 f"""INSERT INTO SYSTEM_NOTIFY(NOTIFY_NAME,NOTIFY_TIME,NOTIFY_WORK_DAY,NOTIFY_MESSAGE,NOTIFY_TARGET,ACTIVE)
                     VALUES ('{bd_name}','{time}','{work_day}','{text}','{target}','{active}')""")
         sqlite_logger.info(f'Уведомление {bd_name} добавлено')
-    except Exception as exc:
+    except Exception:
         sqlite_logger.error(
             f'Произошла ошибка при добавлении уведомления {bd_name}', exc_info=True
         )
 
 
-def set_notify_active(notify_id, active):
+def set_notify_active(notify_id, active)-> bool:
     try:
         with SQLite() as cursor:
             sqlite_logger.info(
@@ -113,13 +113,13 @@ def set_notify_active(notify_id, active):
             sqlite_logger.info(
                 f'Статус успешно уведомления c id = {notify_id} на {active} успешно изменен.')
         return True
-    except Exception as exc:
+    except Exception:
         sqlite_logger.error(f"Возникла ошибка при запросе уведомлений.",
                             exc_info=True)
         return False
 
 
-def get_all_notifys():
+def get_all_notifys()-> list | None:
     try:
         with SQLite() as cursor:
             sqlite_logger.info(
@@ -128,11 +128,9 @@ def get_all_notifys():
             sqlite_logger.info(
                 f'Уведомления успешно запрошены.')
             return cursor.fetchall()
-        return True
-    except Exception as exc:
+    except Exception:
         sqlite_logger.error(f"Возникла ошибка при запросе уведомлений.",
                             exc_info=True)
-        return False
 
 
 def change_notify_status(notify_name):
@@ -144,13 +142,13 @@ def change_notify_status(notify_name):
             sqlite_logger.info(
                 f'Статус {notify_name} успешно изменен.')
         return True
-    except Exception as exc:
+    except Exception:
         sqlite_logger.error(f"Изменении стауста {notify_name} закончилось ошибкой.",
                             exc_info=True)
         return False
 
 
-def midnight_reset_notifications():
+def midnight_reset_notifications()-> bool:
     try:
         with SQLite() as cursor:
             sqlite_logger.info(
@@ -159,7 +157,7 @@ def midnight_reset_notifications():
             sqlite_logger.info(
                 f'Статусы сброшены.')
         return True
-    except Exception as exc:
+    except Exception:
         sqlite_logger.error(f"Во время сброса статусов произошла ошибка.",
                             exc_info=True)
         return False
@@ -179,23 +177,23 @@ def add_admin_user_db(tg_id=None, user_fio=None, user_phone=None) -> bool:
         sqlite_logger.error(f"Не могу добавить пользователя, значение {exc.args[0].split(':')[1].split('.')[1]} не уникально",
                             exc_info=True)
         return False
-    except Exception as exc:
+    except Exception:
         sqlite_logger.error(
             "Произошла ошибка при добавлении пользователя", exc_info=True)
     return False
 
 
-def return_phone_num_db(tg_id_for_get_phone):
+def return_phone_num_db(tg_id_for_get_phone)-> str | None:
     try:
         with SQLite() as cursor:
             sqlite_logger.info(f"Запрошен телефон для пользователя {tg_id_for_get_phone}")
             cursor.execute(f"select phone_num from ADMIN_USERS where tg_id = {tg_id_for_get_phone}")
             return cursor.fetchone()[0]
-    except Exception as exc:
+    except Exception:
         sqlite_logger.error(f"Произошла ошибка при запросе телефона для {tg_id_for_get_phone}", exc_info=True)
 
 
-def show_all_admin_db() -> dict:
+def show_all_admin_db() -> dict | None:
     #Нужно будет переделать выбор админа или смотрящего за hpsm на inline keyboard
     try:
         with SQLite() as cursor:
@@ -204,7 +202,7 @@ def show_all_admin_db() -> dict:
             res = { num:f"{tg_id}:{fio}" for num, (tg_id,fio) in enumerate(dict(query_result).items())}
             sqlite_logger.info("Администраторы отданы из бд")
             return res    
-    except Exception as exc:
+    except Exception:
         sqlite_logger.error("Произошла ошибка при запросе администраторов",exc_info=True)
 
 
@@ -215,8 +213,9 @@ def delete_admin_user_db(admin_id,tg_id_for_delete) -> bool:
             cursor.execute(f"DELETE FROM ADMIN_USERS where tg_id = {tg_id_for_delete}")
             sqlite_logger.info(f"Пользователь {tg_id_for_delete} успешно удален")
             return True
-    except Exception as exc:
+    except Exception:
         sqlite_logger.error("Произошла ошибка при удалении администраторов",exc_info=True)
+        return False
 
 
 def check_admin_permissions(tg_id_for_check)-> bool:
@@ -229,29 +228,30 @@ def check_admin_permissions(tg_id_for_check)-> bool:
             else:
                 sqlite_logger.info(f"У пользователя {tg_id_for_check} не найдены права администратора")
                 return False
-    except Exception as exc:
-        sqlite_logger.error(f"При проверке прав доступа пользователя {tg_id_for_check}",exc_info=True)
+    except Exception:
+        sqlite_logger.error(f"При проверке прав доступа пользователя произошла ошибка {tg_id_for_check}",exc_info=True)
+        return False
 
-def set_owner_or_duty_db(tg_id, role='duty'):
+def set_owner_or_duty_db(tg_id:str, role='duty'):
     try:
         with SQLite() as cursor:
             sqlite_logger.info(f"Для пользователя {tg_id} устанавливается роль {role}")
             cursor.execute(f"UPDATE ADMIN_USERS SET {role} = 'NO'")
             cursor.execute(f"UPDATE ADMIN_USERS SET {role} = 'YES' where tg_id = {tg_id}")
             sqlite_logger.info(f"Роль {role} для {tg_id} установлена успешно")
-    except Exception as exc:
+    except Exception:
         sqlite_logger.error(f"Произошла ошибка при установке роли-{role} для {tg_id}")
 
 
-def get_owner_or_duty_db(role='duty'):
+def get_owner_or_duty_db(role='duty') -> dict | None: 
     try:
         with SQLite() as cursor:
             sqlite_logger.info(f"Запрошен текущий {role} из БД")
             query_result = cursor.execute(f"SELECT tg_id, fio from ADMIN_USERS where {role}='YES'").fetchone()
             if query_result:
                 return {"tg_id":query_result[0],"fio":query_result[1]}
-            return None
-    except Exception as exc:
+            return {"tg_id":0,"fio":"Не найден"}
+    except Exception:
         sqlite_logger.error(f"Произошла ошибка при запросе {role} из БД")
 
 
@@ -261,17 +261,17 @@ def write_hpsm_status_db(task_count = 0, rr_task_count = 0) -> bool:
             cursor.execute(
                     f"UPDATE HPSM_STATUS SET task = '{task_count}' , rr_task = '{rr_task_count}' , timestamp = strftime('%s','now') WHERE id = 1;")
             return True
-    except Exception as exc:
+    except Exception:
         sqlite_logger.error("Произошла ошибка при записи задач HPSM, в таблицу HPSM_STATUS", exc_info=True)
         return False
 
 
-def get_hpsm_status_db() -> dict:
+def get_hpsm_status_db() -> dict | None:
     try:
         with SQLite() as cursor:
-            query_result = cursor.execute("SELECT * FROM HPSM_STATUS").fetchall()
+            query_result = cursor.execute("SELECT task,rr_task,timestamp FROM HPSM_STATUS WHERE id = 1").fetchone()
             if query_result:
                 return {"tasks": query_result[0], "rr_task":query_result[1], "timestamp": query_result[2]}
             return {"tasks": 0 , "rr_task":0, "timestamp": 0}
-    except Exception as exc:
-        sqlite_logger.error("Ошибка при получении статуса заявок HPSM")
+    except Exception:
+        sqlite_logger.error("Ошибка при получении статуса заявок HPSM", exc_info=True)

@@ -17,8 +17,9 @@ producer_button = types.InlineKeyboardButton(text = "Продюсер", callback
 notify_button = types.InlineKeyboardButton(text = "Показать уведомления", callback_data = "notify_get")
 accept_sending = types.InlineKeyboardButton(text = "Отправить скриншот", callback_data = "accept_sending")
 notify_set_active_button = types.InlineKeyboardButton(text = "Вкл/выкл уведомлений", callback_data = "notify_set_active")
-admin_menu_keyboard.row_width = 1
-admin_menu_keyboard.add(duty_button,set_owner_manual_button,producer_button,notify_button,notify_set_active_button,accept_sending)
+get_status_button = types.InlineKeyboardButton(text = "Текущий статус HPSM", callback_data = "status_hpsm")
+admin_menu_keyboard.row_width = 2
+admin_menu_keyboard.add(duty_button,set_owner_manual_button,producer_button,notify_button,notify_set_active_button,accept_sending,get_status_button)
 
 document_keyboard_admin = types.InlineKeyboardMarkup()
 document_keyboard_user = types.InlineKeyboardMarkup()
