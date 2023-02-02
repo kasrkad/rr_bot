@@ -3,22 +3,19 @@ import os
 import csv
 from ..logger_config.logger_data import create_logger
 
-#settings_import
-DEFAULT_ORACLE_USER = os.environ['DEFAULT_ORACLE_USER']
-DEFAULT_ORACLE_PASS = os.environ['DEFAULT_ORACLE_PASS']
-
-
 #logger settings
 oracle_module_logger = create_logger(__name__)
 
 
 class OracleConnect:
-    def __init__(self, connection_string= None):
+    def __init__(self, connection_string= None,oracle_user = None, oracle_password = None):
         self.oracle_connection_string = connection_string
+        self.oracle_user = oracle_user
+        self.oracle_password = oracle_password
         
     def __enter__(self):
         try:
-            self.oracle_connection = cx_Oracle.connect(DEFAULT_ORACLE_USER,DEFAULT_ORACLE_PASS, self.oracle_connection_string, encoding='UTF-8')
+            self.oracle_connection = cx_Oracle.connect(self.oracle_user,self.oracle_password, self.oracle_connection_string, encoding='UTF-8')
             oracle_module_logger.info("Соединение с бд установлено")
             return self.oracle_connection.cursor()
         except Exception as exc:
@@ -31,11 +28,11 @@ class OracleConnect:
         oracle_module_logger.info("Соединение с бд закрыто")
 
 
-def get_audit_for_document(oracle_connection_string, documents = list):
+def get_audit_for_document(oracle_connection_string,oracle_user=None,oracle_password= None, documents = list):
     os.makedirs("audit_files", exist_ok=True)
     oracle_module_logger.info(f'Производим запрос на аудит документа/ов: {",".join(doc for doc in documents)}')
     audit_path_for_send = []
-    with OracleConnect(oracle_connection_string) as cursor:
+    with OracleConnect(oracle_connection_string,oracle_user=oracle_user, oracle_password=oracle_password) as cursor:
         for doc in documents:
             try:
                 data = cursor.execute(f"""SELECT * FROM AUDIT_RECORD WHERE DOCUMENT_ID = '{doc.strip()}' ORDER BY EVENT_TIME ASC""").fetchall()
@@ -56,7 +53,7 @@ def get_audit_for_document(oracle_connection_string, documents = list):
 def get_document_metadata_status(oracle_connection_string, documents = list):
     oracle_module_logger.info(f'Был запрошен статус документов {"".join(doc.strip() for doc in documents)}')
     documents_metadata = {}
-    with OracleConnect(oracle_connection_string) as cursor:
+    with OracleConnect(oracle_connection_string,oracle_user=oracle_user, oracle_password=oracle_password)as cursor:
         for doc in documents:
             try:
                 data = cursor.execute(f"""select id, CASE STATUS WHEN 2 then 'Подписан' when 3 then 'Аннулирован' when 1 then 'Черновик' when 0 then 'Создан' END from METADATA where id = '{doc.strip()}'""").fetchone()

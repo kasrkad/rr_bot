@@ -59,8 +59,6 @@ class Notifyer(threading.Thread):
 
         if current_hour == notify_hours and current_min == notify_min and (obj._status == '0' and obj._active=='True') and (current_work_day in notify_work_days):
             notify_logger.info(f'Условия удовлетворяют для срабатывания уведомления {obj._bd_name}')
-            #здесь будет проверка на цель для отправки уведомления obj.target = system значит в канал на дежурного и руководителя,
-            #user значит только дежурному в личку
             obj._status = '1'
             change_notify_status(obj._bd_name)
             self.send_notification(notify_obj=obj)

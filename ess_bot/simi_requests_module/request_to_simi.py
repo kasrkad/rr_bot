@@ -1,18 +1,9 @@
-from config import PPAK_SOAP_USER
 import requests
-import os
+from .simi_requests_config import *
 from ..logger_config.logger_data import create_logger
 
 #configure logger
 request_to_simi_logger = create_logger(__name__)
-
-
-PRODUCER_SOAP_PASS = os.environ['PRODUCER_SOAP_PASS']
-PRODUCER_SOAP_USER = os.environ['PRODUCER_SOAP_USER']
-PPAK_SOAP_USER = os.environ['PPAK_SOAP_USER']
-SIMI_DNS_NAME_ENDPOINT_TEMPLATE = os.environ['SIMI_DNS_NAME_ENDPOINT_TEMPLATE']
-SIMIP3_DNS_NAME_ENDPOINT_TEMPLATE = os.environ['SIMIP3_DNS_NAME_ENDPOINT_TEMPLATE']
-HEADERS = {'content-type': 'text/xml'}
 
 
 def set_request_diagnostic_endpoint(request_to_set, state = False) -> dict:
@@ -83,7 +74,7 @@ def producer_recreate_request(producer_recreate_request) -> dict:
             response = requests.post(url, data=request_body, headers=HEADERS)
             request_nodes_result[url] = response.status_code
         except Exception as exc:
-            request_nodes_result[url] = "error, see logs"
+            request_nodes_result[url] = 600
             request_to_simi_logger.error(f"Произошла ошибка при запросе на пересоздание продьюсера на узле {url}", exc_info=True)
     
     for node_num_simi_asinc in range(1,3):
@@ -92,7 +83,7 @@ def producer_recreate_request(producer_recreate_request) -> dict:
             response = requests.post(url, data=request_body, headers=HEADERS)
             request_nodes_result[url] = response.status_code
         except Exception as exc:
-            request_nodes_result[url] = "error, see logs"
+            request_nodes_result[url] = 600
             request_to_simi_logger.error(f"Произошла ошибка при запросе на пересоздание продьюсера на узле {url}", exc_info=True)
     
     return request_nodes_result

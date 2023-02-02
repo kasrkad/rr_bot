@@ -53,7 +53,6 @@ class Ess_service_bot:
 
     def bot_commads(self):
 
-
         @self.bot.message_handler(commands=['start'])
         def start_command(message):
             service_bot_logger.info(f'Инициировано главное меню')
@@ -142,11 +141,13 @@ class Ess_service_bot:
         @self.bot.message_handler(commands=['/producer'])
         @self.permissions_decorator
         def producer_recreate(message):
-            service_bot_logger.info(f'Запрошено пересоздание продюсера')
+            service_bot_logger.info(f'Запрошено пересоздание продьюсера')
             try:
                 self.bot.send_message(message.from_user.id,'Запущено пересоздание продюсера.')
-                print('agressive recreating')# Добавить пересоздание продьюсеров!!!!!
-                self.bot.send_message(message.from_user.id, 'Пересоздание завершено.')
+                reload_result = producer_recreate(REQUEST_FOR_PRODUCER_RELOAD)
+                self.bot.send_message(message.from_user.id, 'Пересоздание завершено.Результаты:' + 
+                "\n".join(f'{node}:{result}' for node,result in reload_result.values()))
+
             except Exception as exc:
                 service_bot_logger.error(f'Произошла ошибка при пересоздании продюсера, запрос от {message.from_user.id}.', exc_info=True)
 
@@ -240,6 +241,8 @@ class Ess_service_bot:
                         send_file(tg_id=call.from_user.id, files=audit_for_send)
                     if call.data == 'status_test':
                         documents_with_statuses = oracle_lib.get_document_metadata_status(oracle_connection_string=DEV_DOC_CONNECTION_STRING,
+                                                                                        oracle_user =  DEFAULT_ORACLE_USER,
+                                                                                        oracle_password = DEFAULT_ORACLE_PASS,
                                                                                         documents=finded_docs)
                         for document, status in documents_with_statuses.items():
                             self.bot.send_message(call.from_user.id,f'{document}: {status}')
@@ -255,16 +258,20 @@ class Ess_service_bot:
                         send_file(tg_id=call.from_user.id, files=documents_for_send)
                     if call.data == 'audit_ppak':
                         audit_for_send = oracle_lib.get_audit_for_document(oracle_connection_string=PPAK_STANDBY_ORACLE_CONNECTION_STRING, 
+                                                                            oracle_user =  DEFAULT_ORACLE_USER,
+                                                                            oracle_password = DEFAULT_ORACLE_PASS,
                                                                             documents=finded_docs)
                         send_file(tg_id=call.from_user.id, files=audit_for_send)
                     if call.data == 'status_ppak':
                         documents_with_statuses = oracle_lib.get_document_metadata_status(oracle_connection_string=PPAK_STANDBY_ORACLE_CONNECTION_STRING,
+                                                                                        oracle_user =  DEFAULT_ORACLE_USER,
+                                                                                        oracle_password = DEFAULT_ORACLE_PASS,
                                                                                         documents=finded_docs)
                         for document, status in documents_with_statuses.items():
                             self.bot.send_message(call.from_user.id,f'{document}: {status}')
 
                 except ValueError as val_error:
-                    service_bot_logger.info(f'Пустой список документов')
+                    service_bot_logger.warning(f'Пустой список документов')
                     self.bot.send_message(call.from_user.id,'Документы на стенде не обнаружены.')
                 except Exception as exc:
                     service_bot_logger.error(f'Произошла ошибка при работе с документами', exc_info=True)
@@ -316,6 +323,7 @@ class Ess_service_bot:
         try:
             service_bot_logger.info('Запускаем бота')
             self.bot_commads()
+            self.bot_send_message(ESS_CHAT_ID,'Сервис бот запущен')
             self.bot.polling(none_stop=True, interval=0, timeout=20)
         except Exception as exc:
             service_bot_logger.error(f'Ошибка при запуске бота', exc_info=True)

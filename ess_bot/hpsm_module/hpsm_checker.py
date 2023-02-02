@@ -74,12 +74,14 @@ class Hpsm_checker(Thread):
                 self.send_notification(text=message_for_get_request.format(ticket_id=ticket['record_id']),channel=True,
                 owner=True,duty=True)
         rr_counter = self.get_rr_count(tickets=tickets)['rr_task_count']
-        hpsm_logger.info(f'Кол-во РР = {rr_counter} сработка условий- '+ str(int(current_hour) == 17 and int(current_min) > 30) and rr_counter != 0 and self.check_working_time())
+        hpsm_logger.info(f'Кол-во РР = {rr_counter} сработка условий - '+ str(int(current_hour) == 17 and int(current_min) > 30 and rr_counter != 0 and self.check_working_time()))
         if (int(current_hour) == 17 and int(current_min) > 30) and rr_counter != 0 and self.check_working_time():
             hpsm_logger.warning(f'Отправляем уведомление по открытым РР {rr_counter}')
             self.send_notification(text=message_with_rr_count.format(rr_count=rr_counter), channel=True)
         
-        if int(current_hour) == 17 and int(current_min) > 45 and rr_counter != 0 and self.check_working_time():
+        if (int(current_hour) == 17 and int(current_min) > 45 and rr_counter != 0 and self.check_working_time()) or (int(current_hour) == 21 
+        and int(current_min) > 45 and rr_counter != 0 and self.check_working_time()) :
+
             hpsm_logger.warning(f'Делаем скриншот hpsm. Время снятия - {current_hour} : {current_min}.')
             self.make_screenshot()
        

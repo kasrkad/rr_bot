@@ -1,0 +1,16 @@
+_{_VALUE_}_request
+_{_VALUE_}_AS392
+_{_VALUE_}_4
+_{_VALUE_}_AS203
+_{_VALUE_}_In work
+_{_VALUE_}_AS346
+_{_VALUE_}_Assigned
+_{_VALUE_}_Planning
+_{_VALUE_}_cm3r
+_{_VALUE_}_Approval
+_{_VALUE_}_cm3t
+_{_VALUE_}_Запланировано
+_{_VALUE_}_Assigneed
+_{_VALUE_}_Выполняется
+_{_VALUE_}_Delayed
+_{_VALUE_}_Waiting
