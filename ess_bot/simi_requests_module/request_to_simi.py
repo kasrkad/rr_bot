@@ -1,5 +1,5 @@
 import requests
-from .simi_requests_config import *
+from .request_config import *
 from ..logger_config.logger_data import create_logger
 
 #configure logger
