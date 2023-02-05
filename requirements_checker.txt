@@ -1,2 +1,0 @@
-pyTelegramBotAPI==3.7.9
-selenium==3.141.0
