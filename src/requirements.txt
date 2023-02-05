@@ -1,0 +1,5 @@
+pyTelegramBotAPI==3.7.9
+selenium==3.141.0
+requests==2.26.0
+beautifulsoup4==4.9.3
+oracledb==1.2.2

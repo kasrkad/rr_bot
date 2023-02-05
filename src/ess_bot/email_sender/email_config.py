@@ -1,0 +1,5 @@
+from os import environ
+
+TARGET_EMAIL = environ['TARGET_EMAIL']
+EMAIL_SENDER_LOGIN = environ['EMAIL_SENDER_LOGIN']
+EMAIL_SENDER_PASS = environ['EMAIL_SENDER_PASS']
