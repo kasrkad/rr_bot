@@ -1,0 +1,18 @@
+{
+    "admins":[
+        {"tg_id":28389123,
+        "phone_num":1391234123,
+        "fio":"Andy Larkin"
+        },
+        {"tg_id":994871723,
+        "phone_num":48817231,
+        "fio":"Liz Joseph"
+        },
+        {"tg_id":887162312,
+        "phone_num":8237312,
+        "fio":"Director Murector",
+        "duty":"YES",
+        "owner":"YES"
+        }
+    ]
+}
