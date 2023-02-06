@@ -13,7 +13,7 @@ def create_logger(logger_name):
                                                                         interval=24,
                                                                         backupCount=3)
         logger_handler_file.setLevel(logging.INFO)
-        logger_stdout.setLevel(logging.ERROR)
+        logger_stdout.setLevel(logging.INFO)
         logger.addHandler(logger_handler_file)
         logger.addHandler(logger_stdout)
         logger_handler_file.setFormatter(formatter)

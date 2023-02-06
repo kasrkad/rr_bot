@@ -1,11 +1,13 @@
+from operator import imod
 import telebot
+from os import environ
 import threading
 from ..logger_config.logger_data import create_logger
 from ..sqlite_module.sql_lib import get_all_notifys,change_notify_status,midnight_reset_notifications,get_owner_or_duty_db
 
 #configure logger
 notify_logger = create_logger(__name__)
-
+ESS_CHAT_ID = environ["ESS_CHAT_ID"]
 
 class Notify:
     def __init__(self,id=None,bd_name=None, time=None, work_day=None,text=None, status = 0 , target = "system", active='True'):
@@ -29,7 +31,6 @@ class Notifyer(threading.Thread):
     def send_notification(self,notify_obj):
         notify_logger.info(f'Отправляем уведомление {notify_obj._bd_name}.')
         try:
-            from config import ESS_CHAT_ID
             bot = telebot.TeleBot(self.bot_token, parse_mode='MARKDOWN')
             duty_engeneer = get_owner_or_duty_db('duty')
             hpsm_owner = get_owner_or_duty_db('owner')

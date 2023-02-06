@@ -68,7 +68,7 @@ class Ess_service_bot:
                 new_duty = sql_lib.get_owner_or_duty_db(role='duty')
                 asterisk_lib.set_duty_phone(sql_lib.return_phone_num_db(message.from_user.id))
                 self.bot.send_message(message.from_user.id, f'Предыдущий дежурный - [{current_duty["fio"]}](tg://user?id={current_duty["tg_id"]}),\n\
-                                                            новый дежурный - [{new_duty["fio"]}](tg://user?id={new_duty["tg_id"]})')
+новый дежурный - [{new_duty["fio"]}](tg://user?id={new_duty["tg_id"]})')
             except Exception as exc:
                 service_bot_logger.error(f'Ошибка при установке дежурного {exc.args}')
                 self.bot.send_message(message.from_user.id, 'Не удалось установить нового дежурного')
@@ -225,6 +225,8 @@ class Ess_service_bot:
                         send_file(tg_id=call.from_user.id, files=documents_for_send)
                     if call.data == 'audit_test':
                         audit_for_send = oracle_lib.get_audit_for_document(oracle_connection_string=DEV_DOC_CONNECTION_STRING, 
+                                                                            oracle_user =  DEFAULT_ORACLE_USER,
+                                                                            oracle_password = DEFAULT_ORACLE_PASS,
                                                                             documents=finded_docs)
                         send_file(tg_id=call.from_user.id, files=audit_for_send)
                     if call.data == 'status_test':
@@ -245,13 +247,13 @@ class Ess_service_bot:
                         documents_for_send = write_json_or_xml_document(doc_data=doc_data_json_test, file_format='json')               
                         send_file(tg_id=call.from_user.id, files=documents_for_send)
                     if call.data == 'audit_ppak':
-                        audit_for_send = oracle_lib.get_audit_for_document(oracle_connection_string=PPAK_STANDBY_ORACLE_CONNECTION_STRING, 
+                        audit_for_send = oracle_lib.get_audit_for_document(oracle_connection_string=PPAK_STANDBY_CONNECTION_STRING, 
                                                                             oracle_user =  DEFAULT_ORACLE_USER,
                                                                             oracle_password = DEFAULT_ORACLE_PASS,
                                                                             documents=finded_docs)
                         send_file(tg_id=call.from_user.id, files=audit_for_send)
                     if call.data == 'status_ppak':
-                        documents_with_statuses = oracle_lib.get_document_metadata_status(oracle_connection_string=PPAK_STANDBY_ORACLE_CONNECTION_STRING,
+                        documents_with_statuses = oracle_lib.get_document_metadata_status(oracle_connection_string=PPAK_STANDBY_CONNECTION_STRING,
                                                                                         oracle_user =  DEFAULT_ORACLE_USER,
                                                                                         oracle_password = DEFAULT_ORACLE_PASS,
                                                                                         documents=finded_docs)
@@ -344,4 +346,5 @@ class Ess_service_bot:
             self.bot.polling(none_stop=True, interval=0, timeout=20)
         except Exception:
             service_bot_logger.error(f'Ошибка при запуске бота', exc_info=True)
+            os.time.sleep(30)
         

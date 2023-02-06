@@ -37,6 +37,7 @@ class Hpsm_checker(Thread):
         while True:
             try:
                 data = self.control_queue.get()
+                hpsm_logger.info(f'получено сообщение в очередь {data}')
                 if data is None:
                     break
                 if data[1] == 'notification_off':
@@ -52,28 +53,33 @@ class Hpsm_checker(Thread):
                     self.make_screenshot()
                     self.send_notification(text='Проверьте скриншот, для отправки нажмите на /send', screenshot=True)
                 else:
-                    print(f'не известный параметр {data[1]} от {data[0]}')
+                    print(f'неизвестный параметр {data[1]} от {data[0]}')
             except Exception:
                 hpsm_logger.error('Ошибка при работе с очередью command = {data}')
 
 
     def send_notification(self,text,channel=False,duty=False,owner=False,screenshot=False):
+        hpsm_logger.info('Отправляем уведомление')
         bot = self.create_bot()
-        duty = get_owner_or_duty_db(role='duty')
-        owner = get_owner_or_duty_db(role='owner')
+        duty_now = get_owner_or_duty_db(role='duty')
+        owner_now = get_owner_or_duty_db(role='owner')
         keyboard = None
-        if duty and owner: 
+        try:
             if screenshot :
-                bot.send_message(duty['tg_id'],text)
-                bot.send_photo(duty['tg_id'],photo=open('screenshot_hpsm.png','rb'))
+                hpsm_logger.info(f'Отправляем скриншот для {str(duty_now)}')
+                bot.send_message(duty_now['tg_id'],text)
+                hpsm_logger.info('Сообщение отправлено')
+                bot.send_photo(duty_now['tg_id'],photo=open('screenshot_hpsm.png','rb'))
+                hpsm_logger.info('Скриншот отправлен.')
             if channel and self.send_notifi_flag:
-                bot.send_message(ESS_CHAT_ID,text+f"\n[{duty['fio']}](tg://user?id={duty['tg_id']})\n[{owner['fio']}](tg://user?id={owner['tg_id']})")
+                bot.send_message(ESS_CHAT_ID,text+f"\n[{duty_now['fio']}](tg://user?id={duty_now['tg_id']})\n[{owner_now['fio']}](tg://user?id={owner_now['tg_id']})")
             if duty and self.send_notifi_flag:
-                bot.send_message(duty['tg_id'],text,reply_markup=keyboard)
+                bot.send_message(duty_now['tg_id'],text,reply_markup=keyboard)
             if owner and self.send_notifi_flag:
-                bot.send_message(owner['tg_id'],text)
-        else:
-            self.send_notification(text="Требуется установить дежурного и ответственного за HPSM.", channel=True)
+                bot.send_message(owner_now['tg_id'],text)
+        except Exception:
+            hpsm_logger.error("Произошла ошибка при отправке уведомления", exc_info=True)
+
 
 
     def make_screenshot(self) -> str:
@@ -85,7 +91,6 @@ class Hpsm_checker(Thread):
             driver.get_screenshot_as_file("screenshot_hpsm.png")
             driver.get('https://hpsm.emias.mos.ru/sm/goodbye.jsp?lang=')
             driver.quit()
-            return './screenshot_hpsm.png'
         except Exception:
             hpsm_logger.error('Произошла ошибка при получении скриншота.', exc_info=True)
             raise HpsmScreenshotError
@@ -246,7 +251,6 @@ class Hpsm_checker(Thread):
         except Exception as exc:
             hpsm_logger.critical("Очередь не запущена!", exc_info=True)
             print(exc, exc.args)
-            exit()
         while True:
             try:
                 self.load_rr_from_file()

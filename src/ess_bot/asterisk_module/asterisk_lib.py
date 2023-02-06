@@ -1,5 +1,5 @@
 import requests
-from .asterisk_config import ASTERISK_PASS,ASTERISK_LOGIN
+from .asterisk_config import ASTERISK_PASS,ASTERISK_LOGIN,ASTERISK_IP
 from ..logger_config.logger_data import create_logger
 from ..bot_exceptions.asterisk_exceptions import FailAcceptNewDutyPhone,FailToChangeDutyPhone
 
@@ -36,7 +36,7 @@ def set_duty_phone(phone_for_set:str):
         payload_for_set['grplist'] = f'phone_for_set'
         reload_asterisk_settings_data = {"handler": "reload"}
         request_session = requests.Session()
-        auth = request_session.post('https://pbx/index.php',data=ASTERISK_LOGIN_DATA,
+        auth = request_session.post(f'https://{ASTERISK_IP}/index.php',data=ASTERISK_LOGIN_DATA,
                                     verify=False)
         set_duty_phone_request = request_session.post(ASTERISK_GROUP, data=payload_for_set,cookies=request_session.cookies,
                                         headers=ASTERSK_HEADERS,
@@ -51,6 +51,6 @@ def set_duty_phone(phone_for_set:str):
             raise FailAcceptNewDutyPhone('Ошибка при примененнии номера дежурного код')
         asterisk_logger.info("Запрос успешно обработан")
     except Exception as exc:
-        asterisk_logger.error("Произошла ошибка при смене номера дежурного")
+        asterisk_logger.error("Произошла ошибка при смене номера дежурного",exc_info=True)
         raise Exception("Ошибка при смене номера дежуного")
         
