@@ -1,6 +1,6 @@
-from json import loads 
+from json import loads
 from time import sleep
-from multiprocessing import Process
+from threading import Thread
 from datetime import datetime
 from threading import Thread
 import telebot
@@ -60,35 +60,35 @@ class Hpsm_checker(Thread):
 
     def send_notification(self,text,channel=False,duty=False,owner=False,screenshot=False):
         hpsm_logger.info('Отправляем уведомление')
-        bot = self.create_bot()
+        notifi_bot = self.create_bot()
         duty_now = get_owner_or_duty_db(role='duty')
         owner_now = get_owner_or_duty_db(role='owner')
         keyboard = None
         try:
-            if screenshot :
+            if screenshot:
                 hpsm_logger.info(f'Отправляем скриншот для {str(duty_now)}')
-                bot.send_message(duty_now['tg_id'],text)
+                notifi_bot.send_message(duty_now['tg_id'],text)
                 hpsm_logger.info('Сообщение отправлено')
-                bot.send_photo(duty_now['tg_id'],photo=open('screenshot_hpsm.png','rb'))
+                notifi_bot.send_photo(duty_now['tg_id'],photo=open('screenshot_hpsm.jpg','rb'))
                 hpsm_logger.info('Скриншот отправлен.')
             if channel and self.send_notifi_flag:
-                bot.send_message(ESS_CHAT_ID,text+f"\n[{duty_now['fio']}](tg://user?id={duty_now['tg_id']})\n[{owner_now['fio']}](tg://user?id={owner_now['tg_id']})")
+                notifi_bot.send_message(ESS_CHAT_ID,text+f"\n[{duty_now['fio']}](tg://user?id={duty_now['tg_id']})\n[{owner_now['fio']}](tg://user?id={owner_now['tg_id']})")
             if duty and self.send_notifi_flag:
-                bot.send_message(duty_now['tg_id'],text,reply_markup=keyboard)
+                notifi_bot.send_message(duty_now['tg_id'],text,reply_markup=keyboard)
             if owner and self.send_notifi_flag:
-                bot.send_message(owner_now['tg_id'],text)
+                notifi_bot.send_message(owner_now['tg_id'],text)
         except Exception:
             hpsm_logger.error("Произошла ошибка при отправке уведомления", exc_info=True)
 
 
 
-    def make_screenshot(self) -> str:
+    def make_screenshot(self):
         driver = self.create_webdriver()
         driver.get(HPSM_PAGE)
         self.login_hpsm(driver,user=HPSM_SCREENSHOT_USER,password=HPSM_SCREENSHOT_PASSWORD)
         self.wait_for_frame(driver, 80)
         try:
-            driver.get_screenshot_as_file("screenshot_hpsm.png")
+            driver.get_screenshot_as_file("screenshot_hpsm.jpg")
             driver.get('https://hpsm.emias.mos.ru/sm/goodbye.jsp?lang=')
             driver.quit()
         except Exception:
@@ -246,7 +246,7 @@ class Hpsm_checker(Thread):
     def run(self):
         try:
             hpsm_logger.info('Создаем ,запускаем очередь.')
-            queue = Process(target=self.start_control_queue)
+            queue = Thread(target=self.start_control_queue)
             queue.start()
         except Exception as exc:
             hpsm_logger.critical("Очередь не запущена!", exc_info=True)
