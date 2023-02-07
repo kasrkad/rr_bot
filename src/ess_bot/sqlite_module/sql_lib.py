@@ -10,7 +10,7 @@ sqlite_logger = create_logger(__name__)
 
 
 class SQLite:
-    def __init__(self, file='botbase.db'):
+    def __init__(self, file='./bot_db/botbase.db'):
         self.file = file
 
     def __enter__(self):
@@ -199,7 +199,7 @@ def return_phone_num_db(tg_id_for_get_phone)-> str:
         sqlite_logger.error(f"Произошла ошибка при запросе телефона для {tg_id_for_get_phone}", exc_info=True)
         raise
 
-def show_all_admin_db() -> dict | None:
+def show_all_admin_db() -> dict :
     try:
         with SQLite() as cursor:
             sqlite_logger.info("Запрошены все доступные администраторы")
@@ -209,6 +209,7 @@ def show_all_admin_db() -> dict | None:
             return res    
     except Exception:
         sqlite_logger.error("Произошла ошибка при запросе администраторов",exc_info=True)
+        return {}
 
 
 def delete_admin_user_db(admin_id,tg_id_for_delete) -> bool:

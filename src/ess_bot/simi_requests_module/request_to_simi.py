@@ -159,5 +159,5 @@ def base64_decode_to_json(request_to_convert,request_to_simi, stand_node_adress,
             comositions[document_id] = json_from_response.contents[0]
             request_to_simi_logger.info(f'Документ {document_id} успешно преобразован')
         except Exception as exc:
-            request_to_simi_logger.info(f'Во время преобразования документа {document_id} произошли ошибки')
+            request_to_simi_logger.info(f'Во время преобразования документа {document_id} произошли ошибки', exc_info=True)
     return comositions

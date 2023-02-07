@@ -27,7 +27,7 @@ ASTERISK_PAYLOAD = {
 }
 
 def set_duty_phone(phone_for_set:str):
-    ASTERISK_GROUP = 'https://pbx/config.php?display=ringgroups&extdisplay=GRP-627'
+    ASTERISK_GROUP = f'https://{ASTERISK_IP}/config.php?display=ringgroups&extdisplay=GRP-627'
     ASTERSK_HEADERS = {'Referer':'https://pbx/config.php?display=ringgroups&extdisplay=GRP-627'}
     ASTERISK_LOGIN_DATA = {"input_user": ASTERISK_LOGIN, "input_pass": ASTERISK_PASS, "submit_login": "Submit"}
     try:

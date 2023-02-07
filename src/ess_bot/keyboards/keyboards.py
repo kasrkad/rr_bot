@@ -13,13 +13,19 @@ main_menu_keyboard.add(contacts_button,help_button,admin_button)
 admin_menu_keyboard = types.InlineKeyboardMarkup()
 duty_button = types.InlineKeyboardButton(text = "Дежурю", callback_data = "duty")
 set_owner_manual_button = types.InlineKeyboardButton(text = "Назначение на HPSM", callback_data = "set_owner_manual")
+set_duty_manual_button = types.InlineKeyboardButton(text = "Назначение на дежурство", callback_data = "set_duty_manual")
 producer_button = types.InlineKeyboardButton(text = "Продюсер", callback_data = "producer")
 notify_button = types.InlineKeyboardButton(text = "Показать уведомления", callback_data = "notify_get")
 accept_sending = types.InlineKeyboardButton(text = "Отправить скриншот", callback_data = "screenshot")
 notify_set_active_button = types.InlineKeyboardButton(text = "Вкл/выкл уведомлений", callback_data = "notify_set_active")
 get_status_button = types.InlineKeyboardButton(text = "Текущий статус HPSM", callback_data = "status_hpsm")
 admin_menu_keyboard.row_width = 2
-admin_menu_keyboard.add(duty_button,set_owner_manual_button,producer_button,notify_button,notify_set_active_button,accept_sending,get_status_button)
+admin_menu_keyboard.add(duty_button,accept_sending,
+                        set_owner_manual_button,set_duty_manual_button,
+                        notify_button,notify_set_active_button,
+                        get_status_button,producer_button)
+
+
 
 document_keyboard_admin = types.InlineKeyboardMarkup()
 document_keyboard_user = types.InlineKeyboardMarkup()

@@ -1,20 +1,11 @@
-FROM python:3.10.0-alpine3.13 as builder
-RUN apk update \
-    && apk upgrade \
-    && apk add --no-cache bash \
-    libffi-dev \
-    gcc \
-    musl-dev
-COPY ./src/requirements.txt /bot/
-WORKDIR /bot/
-RUN cd /bot/ && pip3 install -r requirements.txt 
+FROM python:3.10-slim-buster as builder
+COPY ./requirements.txt /bot/
+WORKDIR /bot
+RUN apt-get update && pip3 install -r requirements.txt
 
-
-From python:3.10.0-alpine3.13
+FROM python:3.10-slim-buster 
 ENV TZ="Asia/Yekaterinburg"
-RUN apk update \
-    && apk upgrade \
-    && apk add --no-cache firefox 
+RUN apt-get update && apt-get install --no-install-recommends -y firefox-esr
 COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
 COPY ./src /bot
 WORKDIR /bot/

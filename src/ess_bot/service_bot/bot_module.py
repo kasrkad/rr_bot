@@ -1,3 +1,4 @@
+from atexit import register
 import telebot
 import re
 from datetime import datetime
@@ -22,8 +23,9 @@ class Ess_service_bot:
         self.bot = telebot.TeleBot(bot_token, parse_mode='MARKDOWN')
         self.hpsm_control_queue= hpsm_control_queue
         self.document_regexp = r"[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}"
-        self.main_menu_call_data = ['contacts','help','admin_menu','notify_get']
-        self.admin_menu_call_data = ['producer','set_owner_manual','screenshot','duty','notify_set_active','status_hpsm']
+        self.main_menu_call_data = ['contacts','help','admin_menu']
+        self.admin_menu_call_data = ['producer','set_owner_manual','screenshot','duty','notify_get'
+                                    ,'notify_set_active','status_hpsm','set_duty_manual']
         self.documents_call_data = ['download_doc_test','download_json_test','audit_test', 
                                     'status_test','download_doc_ppak','download_json_ppak',
                                     'audit_ppak','status_ppak'] 
@@ -60,15 +62,23 @@ class Ess_service_bot:
 
         @self.bot.message_handler(commands=['дежурю'])
         @self.permissions_decorator
-        def reqister_duty_engeneer(message):
+        def reqister_duty_engeneer(message, tg_id=None):
             try:
+                tg_id_for_set = message.from_user.id
+                if tg_id:
+                    tg_id_for_set = tg_id
+
                 service_bot_logger.info(f'Запрос на установку дежурного с id {message.from_user.id}')
                 current_duty= sql_lib.get_owner_or_duty_db(role='duty')
-                sql_lib.set_owner_or_duty_db(message.from_user.id)
+                sql_lib.set_owner_or_duty_db(tg_id_for_set)
                 new_duty = sql_lib.get_owner_or_duty_db(role='duty')
-                asterisk_lib.set_duty_phone(sql_lib.return_phone_num_db(message.from_user.id))
+                asterisk_lib.set_duty_phone(sql_lib.return_phone_num_db(tg_id_for_set))
+
                 self.bot.send_message(message.from_user.id, f'Предыдущий дежурный - [{current_duty["fio"]}](tg://user?id={current_duty["tg_id"]}),\n\
 новый дежурный - [{new_duty["fio"]}](tg://user?id={new_duty["tg_id"]})')
+                self.bot.send_message(ESS_CHAT_ID, f'Предыдущий дежурный - [{current_duty["fio"]}](tg://user?id={current_duty["tg_id"]}),\n\
+новый дежурный - [{new_duty["fio"]}](tg://user?id={new_duty["tg_id"]})')
+
             except Exception as exc:
                 service_bot_logger.error(f'Ошибка при установке дежурного {exc.args}')
                 self.bot.send_message(message.from_user.id, 'Не удалось установить нового дежурного')
@@ -84,6 +94,40 @@ class Ess_service_bot:
                 self.bot.send_message(message.from_user.id,"\n".join(admin for admin in admins_for_show.values()))
             except Exception:
                 service_bot_logger.error(f'Произошла ошибка при запросе админов от {message.from_user.id}', exc_info=True)
+
+       
+
+        @self.bot.message_handler(commands=['set_duty_manual'])
+        @self.permissions_decorator
+        def set_duty_dialogue(message):
+
+            service_bot_logger.info(f'От {message.from_user.id} запрошено ручное переключение дежурного.')
+            try:
+                show_all_admins(message)
+                message_for_set_duty = self.bot.send_message(message.from_user.id,'Введите телеграм ID для установки дежурного в ручную')
+                self.bot.register_next_step_handler(message_for_set_duty, reqister_duty_engeneer_manual)
+            except Exception:
+                self.bot.send_message(message.from_user.id,'Произошла ошибка в диалоге.')
+                service_bot_logger.error(f'Произошла ошибка в диалоге установки дежурного в ручную от {message.from_user.id}.', exc_info=True)
+
+
+        def reqister_duty_engeneer_manual(message):
+            try:
+                tg_id_for_set = message.text.strip()
+                service_bot_logger.info(f'Запрос на установку дежурного с id {message.from_user.id}')
+                current_duty= sql_lib.get_owner_or_duty_db(role='duty')
+                sql_lib.set_owner_or_duty_db(tg_id_for_set)
+                new_duty = sql_lib.get_owner_or_duty_db(role='duty')
+                asterisk_lib.set_duty_phone(sql_lib.return_phone_num_db(tg_id_for_set))
+
+                self.bot.send_message(message.from_user.id, f'Предыдущий дежурный - [{current_duty["fio"]}](tg://user?id={current_duty["tg_id"]}),\n\
+новый дежурный - [{new_duty["fio"]}](tg://user?id={new_duty["tg_id"]})')
+                self.bot.send_message(ESS_CHAT_ID, f'Предыдущий дежурный - [{current_duty["fio"]}](tg://user?id={current_duty["tg_id"]}),\n\
+новый дежурный - [{new_duty["fio"]}](tg://user?id={new_duty["tg_id"]})')
+
+            except Exception as exc:
+                service_bot_logger.error(f'Ошибка при установке дежурного {exc.args}')
+                self.bot.send_message(message.from_user.id, 'Не удалось установить нового дежурного')
 
 
         @self.bot.message_handler(commands=['set_owner_manual'])
@@ -309,11 +353,11 @@ class Ess_service_bot:
                     help_command(call)
                 if call.data == 'contacts':
                     get_contacts(call)
-                if call.data == 'notify_get':
-                    notify_get(call)
+
             except Exception:
                 service_bot_logger.error('Во время операции произошла ошибка',exc_info=True)
-                self.bot.send_message(call.from_user.id, 'Во время операции произошла ошибка')
+                self.bot.send_message(call.from_user.id, 'Во время операции произошла ошибка',reply_markup=keyboards.main_menu_keyboard)
+            
 
         @self.bot.callback_query_handler(func=lambda call: call.data in self.admin_menu_call_data)
         def callback_inline(call):
@@ -321,7 +365,6 @@ class Ess_service_bot:
                 if call.data == 'set_owner_manual':
                     set_owner_dialogue(call)
                 if call.data == 'duty':
-                    print(call.data)
                     reqister_duty_engeneer(call)
                 if call.data == 'producer':
                     producer_recreate(call)
@@ -333,9 +376,14 @@ class Ess_service_bot:
                     self.bot.send_message(call.from_user.id,'Запрошен скриншот, это может занять до 30 секунд.')
                     service_bot_logger.info('Запрошен скриншот у HPSM парсера.')
                     self.hpsm_control_queue.put((call.from_user.id,'screenshot'))
+                if call.data == 'set_duty_manual':
+                    set_duty_dialogue(call)
+                if call.data == 'notify_get':
+                    notify_get(call)
+
             except Exception:
                 service_bot_logger.error(f'Во время операции произошла ошибка',exc_info=True)
-                self.bot.send_message(call.from_user.id,'Во время операции произошла ошибка.')
+                self.bot.send_message(call.from_user.id,'Во время операции произошла ошибка.',reply_markup=keyboards.admin_menu_keyboard)
 
 
     def run(self):
