@@ -26,13 +26,16 @@ def send_email_with_screenshot(duty=None, sender_email=EMAIL_SENDER_LOGIN, sende
   </body>
 </html>
 """.format(image_cid=image_cid[1:-1], content=f'Дежурный: {duty}'), subtype='html')
-        with open("screenshot_hpsm.png",'rb') as img:
+        with open("screenshot_hpsm.jpg",'rb') as img:
             message.get_payload()[1].add_related(img.read(), 'image', 'jpeg',cid=image_cid)
 
         mail_lib = smtplib.SMTP_SSL('smtp.yandex.ru', 465)
+        sender_logger.info('Письмо создано, логинимся в сервис отправки')
         mail_lib.login(sender_email, sender_password)
+        sender_logger.info('Логин успешен, отправляем сообщение')
         mail_lib.send_message(message)
-        remove('./screenshot_hpsm.png')
+        sender_logger.info('Сообщение успешно отправлено, удаляем файл вложение.')
+        remove('./screenshot_hpsm.jpg')
     except Exception:
         sender_logger.error('При отправке сообщения произошла ошибка', exc_info=True)
         raise
