@@ -87,7 +87,7 @@ class Hpsm_checker(Thread):
         driver = self.create_webdriver()
         driver.get(HPSM_PAGE)
         self.login_hpsm(driver,user=HPSM_SCREENSHOT_USER,password=HPSM_SCREENSHOT_PASSWORD)
-        self.wait_for_frame(driver, 80)
+        self.wait_for_frame(driver, HPSM_WAIT_FRAME_TRIES)
         try:
             driver.get_screenshot_as_file("screenshot_hpsm.jpg")
             driver.get('https://hpsm.emias.mos.ru/sm/goodbye.jsp?lang=')
@@ -166,7 +166,7 @@ class Hpsm_checker(Thread):
                 try_counter += 1
                 continue
             else:
-                sleep(2)
+                sleep(3)
                 hpsm_logger.info(f'Количество попыток для получения списка заявок - {try_counter}')
                 break
         else:
@@ -279,6 +279,5 @@ class Hpsm_checker(Thread):
                 self.count_failed_checks += 1
                 if self.count_failed_checks >= 2:
                     self.send_notification(text=f'Ошибка при получении заявок с HPSM следующая попытка через {HPSM_CHECK_INTERVAL_SECONDS} секунд.', channel=True)
-                self.send_notification(text=f'Возникло необработанное исключение во время работы с заявками',channel=True)
             finally:
                 sleep(HPSM_CHECK_INTERVAL_SECONDS)
