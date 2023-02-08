@@ -1,0 +1,11 @@
+version: "2"
+services:
+  ess_bot:
+    build: . 
+    volumes:
+      - ess_bot_db_volume:/bot/bot_db
+    image: "kasrkad/ess_bot_compose:v0.1"
+    env_file:
+      - env_file
+volumes:
+  ess_bot_db_volume:
