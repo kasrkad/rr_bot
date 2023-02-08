@@ -25,6 +25,7 @@ class Hpsm_checker(Thread):
         self.rr_list = []
         self.send_notifi_flag = True
         self.request_codes = []
+        self.count_failed_checks = 0
 
 
     def create_bot(self):
@@ -260,17 +261,24 @@ class Hpsm_checker(Thread):
                 self.check_tickets_for_notification(tickets=tickets)
                 hpsm_logger.info('Записываем данные о заявках из HPSM в БД')
                 write_hpsm_status_db(**self.get_rr_count(tickets))
+                self.count_failed_checks = 0
             except GetHpsmFrameException as exc:
                 hpsm_logger.error('Произошла ошибка при получении заявок с HPSM.')
-                self.send_notification(text=f'Ошибка при получении заявок с HPSM следующая попытка через {HPSM_CHECK_INTERVAL_SECONDS} секунд.', channel=True)
+                self.count_failed_checks += 1
+                if self.count_failed_checks >= 2:
+                    self.send_notification(text=f'Ошибка при получении заявок с HPSM следующая попытка через {HPSM_CHECK_INTERVAL_SECONDS} секунд.', channel=True)
             except EmptyRequestsListReturn as exc:
                 hpsm_logger.warning('Вернулся пустой список задач с HPSM.')
+                write_hpsm_status_db()
                 print(exc,exc.args)
             except HpsmScreenshotError as exc:
                 self.send_notification('Ошибка в получении скриншота HPSM, необходимо сделать скриншот в ручную.')
             except Exception as exc:
                 print(exc,exc.args)
                 hpsm_logger.error('Возникло необрабатываемое исключение',exc_info=True)
+                self.count_failed_checks += 1
+                if self.count_failed_checks >= 2:
+                    self.send_notification(text=f'Ошибка при получении заявок с HPSM следующая попытка через {HPSM_CHECK_INTERVAL_SECONDS} секунд.', channel=True)
                 self.send_notification(text=f'Возникло необработанное исключение во время работы с заявками',channel=True)
             finally:
                 sleep(HPSM_CHECK_INTERVAL_SECONDS)
