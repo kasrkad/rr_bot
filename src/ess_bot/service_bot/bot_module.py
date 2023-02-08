@@ -1,8 +1,8 @@
-from atexit import register
 import telebot
 import re
 from datetime import datetime
 import os
+from time import sleep
 from ..sqlite_module import sql_lib
 from ..asterisk_module import asterisk_lib
 from ..keyboards import keyboards
@@ -334,7 +334,7 @@ class Ess_service_bot:
 Время последней проверки: {time_from_last_check.strftime("%H:%M")}\n\
 Дежурный и координатор доступны по команде /contacts')
 
-        @self.bot.message_handler(commands=['/adminPanel'])
+        @self.bot.message_handler(commands=['adminPanel'])
         @self.permissions_decorator
         def show_admin_panel(message):
             service_bot_logger.info(f'Открыта админ панель для пользователя {message.from_user.id}')
@@ -387,12 +387,12 @@ class Ess_service_bot:
 
 
     def run(self):
-        try:
-            service_bot_logger.info('Запускаем бота')
-            self.bot_commads()
-            # self.bot.send_message(ESS_CHAT_ID,'Сервис бот запущен')
-            self.bot.polling(none_stop=True, interval=0, timeout=20)
-        except Exception:
-            service_bot_logger.error(f'Ошибка при запуске бота', exc_info=True)
-            os.time.sleep(30)
-        
+        while True:
+            try:
+                service_bot_logger.info('Запускаем бота')
+                self.bot_commads()
+                # self.bot.send_message(ESS_CHAT_ID,'Сервис бот запущен')
+                self.bot.polling(none_stop=True, interval=0, timeout=20)
+            except Exception:
+                service_bot_logger.error(f'Ошибка при запуске бота', exc_info=True)
+                sleep(30)
