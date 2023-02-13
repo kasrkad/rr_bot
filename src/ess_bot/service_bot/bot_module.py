@@ -20,6 +20,12 @@ class Ess_service_bot:
 
     
     def __init__(self, bot_token, hpsm_control_queue):
+        """Бот для облегчения рутинных задач службы ЕСС
+
+        Args:
+            bot_token (str): Токен для работы с Telegram api
+            hpsm_control_queue (queue): Очередь для взаимодействия с парсером HPSM
+        """
         self.bot = telebot.TeleBot(bot_token, parse_mode='MARKDOWN')
         self.hpsm_control_queue= hpsm_control_queue
         self.document_regexp = r"[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}"
@@ -32,6 +38,11 @@ class Ess_service_bot:
 
     
     def permissions_decorator(self,func_for_decorate):
+        """Проверка аккаунта вызывающего команду, на наличие доступа к ней.
+
+        Args:
+            func_for_decorate (_type_): Функция 
+        """
         def wrapper(message):
             if sql_lib.check_admin_permissions(message.from_user.id):
                 func_for_decorate(message)
@@ -42,6 +53,8 @@ class Ess_service_bot:
 
     
     def bot_commads(self):
+        """Передаем боту команды которые он должен обрабатывать
+        """
 
         @self.bot.message_handler(commands=['start'])
         def start_command(message):
@@ -83,7 +96,6 @@ class Ess_service_bot:
                 service_bot_logger.error(f'Ошибка при установке дежурного {exc.args}')
                 self.bot.send_message(message.from_user.id, 'Не удалось установить нового дежурного')
         
-
         @self.bot.message_handler(commands=['admins'])
         @self.permissions_decorator
         def show_all_admins(message):
@@ -96,7 +108,6 @@ class Ess_service_bot:
                 service_bot_logger.error(f'Произошла ошибка при запросе админов от {message.from_user.id}', exc_info=True)
 
        
-
         @self.bot.message_handler(commands=['set_duty_manual'])
         @self.permissions_decorator
         def set_duty_dialogue(message):
@@ -105,13 +116,13 @@ class Ess_service_bot:
             try:
                 show_all_admins(message)
                 message_for_set_duty = self.bot.send_message(message.from_user.id,'Введите телеграм ID для установки дежурного в ручную')
-                self.bot.register_next_step_handler(message_for_set_duty, reqister_duty_engeneer_manual)
+                self.bot.register_next_step_handler(message_for_set_duty, register_duty_engeneer_manual)
             except Exception:
                 self.bot.send_message(message.from_user.id,'Произошла ошибка в диалоге.')
                 service_bot_logger.error(f'Произошла ошибка в диалоге установки дежурного в ручную от {message.from_user.id}.', exc_info=True)
 
 
-        def reqister_duty_engeneer_manual(message):
+        def register_duty_engeneer_manual(message):
             try:
                 tg_id_for_set = message.text.strip()
                 service_bot_logger.info(f'Запрос на установку дежурного с id {message.from_user.id}')
@@ -242,6 +253,7 @@ class Ess_service_bot:
 
         @self.bot.message_handler(regexp=self.document_regexp)
         def document_handle(message):
+            """Ищем guid документа по регулярке"""
             global finded_docs 
             finded_docs = re.findall(self.document_regexp, message.text.strip())
             if sql_lib.check_admin_permissions(message.from_user.id):
@@ -391,8 +403,9 @@ class Ess_service_bot:
             try:
                 service_bot_logger.info('Запускаем бота')
                 self.bot_commads()
-                # self.bot.send_message(ESS_CHAT_ID,'Сервис бот запущен')
+                self.bot.send_message(ESS_CHAT_ID,'Сервис бот запущен')
                 self.bot.polling(none_stop=True, interval=0, timeout=20)
             except Exception:
+                #При получении исключения, делаем паузу при работе в 30 секунд
                 service_bot_logger.error(f'Ошибка при запуске бота', exc_info=True)
                 sleep(30)

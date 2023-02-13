@@ -1,6 +1,6 @@
 from telebot import types
 
-
+#Клавиатура для основного меню
 main_menu_keyboard = types.InlineKeyboardMarkup()
 contacts_button = types.InlineKeyboardButton(text = "Контакты", callback_data = "contacts")
 help_button = types.InlineKeyboardButton(text = "Помощь", callback_data = "help")
@@ -9,7 +9,7 @@ admin_button = types.InlineKeyboardButton(text = "Админка", callback_data
 main_menu_keyboard.row_width = 2
 main_menu_keyboard.add(contacts_button,help_button,admin_button)
 
-
+#Клавиатура для админского меню
 admin_menu_keyboard = types.InlineKeyboardMarkup()
 duty_button = types.InlineKeyboardButton(text = "Дежурю", callback_data = "duty")
 set_owner_manual_button = types.InlineKeyboardButton(text = "Назначение на HPSM", callback_data = "set_owner_manual")
@@ -26,9 +26,9 @@ admin_menu_keyboard.add(duty_button,accept_sending,
                         get_status_button,producer_button)
 
 
-
-document_keyboard_admin = types.InlineKeyboardMarkup()
-document_keyboard_user = types.InlineKeyboardMarkup()
+#Клавиатуры для работы с документами
+document_keyboard_admin = types.InlineKeyboardMarkup() #Админская
+document_keyboard_user = types.InlineKeyboardMarkup() #Юзерская
 download_doc_dev = types.InlineKeyboardButton(text = "Скачать документ с Теста", callback_data = "download_doc_test")
 download_json_dev = types.InlineKeyboardButton(text = "Скачать композицию с Теста", callback_data = "download_json_test")
 audit_test = types.InlineKeyboardButton(text = "Аудит документа Тест", callback_data = "audit_test")

@@ -9,11 +9,23 @@ oracle_module_logger = create_logger(__name__)
 
 class OracleConnect:
     def __init__(self, connection_string= None,oracle_user = None, oracle_password = None):
+        """Инициализируем соединение с БД оракл
+
+        Args:
+            connection_string (str): строка подключения в виде oracle_server:oracle_port/service_name
+            oracle_user (str): Имя польззователя
+            oracle_password (str): пароль пользователя
+        """
         self.oracle_connection_string = connection_string
         self.oracle_user = oracle_user
         self.oracle_password = oracle_password
         
     def __enter__(self):
+        """Открывает соединение с указанной БД
+
+        Returns:
+            cursor: объект для выполнения запросов к БД
+        """
         try:
             self.oracle_connection = oracledb.connect(user=self.oracle_user,password=self.oracle_password,
                                                         dsn=self.oracle_connection_string, encoding='UTF-8')

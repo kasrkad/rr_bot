@@ -1,5 +1,5 @@
 
-
+#Запрос на перезапуск продьюсера
 REQUEST_FOR_PRODUCER_RELOAD = '''<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ru="ru.emias.simi.v2.api.diagnostic.v1">
     <soapenv:Header>
     <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
@@ -14,6 +14,7 @@ REQUEST_FOR_PRODUCER_RELOAD = '''<soapenv:Envelope xmlns:soapenv="http://schemas
 </soapenv:Body>
 </soapenv:Envelope>'''
 
+#Запрос на преобразование композиции
 REQUEST_BASE64_TO_JSON_CONVERT = """<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:typ="http://emias.mos.ru/simi/v4/openEhrService/types">
    <soapenv:Header>
       <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
@@ -31,6 +32,7 @@ REQUEST_BASE64_TO_JSON_CONVERT = """<soapenv:Envelope xmlns:soapenv="http://sche
 </soapenv:Envelope>
 """
 
+#Запрос к сими на документ
 SIMI_GET_DOC_REQUEST = """<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:user="http://emias.mos.ru/system/v1/userContext/" xmlns:typ="http://emias.mos.ru/simi/simiService/v5/types/" xmlns:v5="http://emias.mos.ru/simi/document/v5/" xmlns:v51="http://emias.mos.ru/simi/core/v5/">
 <soap:Header>
     <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
@@ -52,7 +54,7 @@ SIMI_GET_DOC_REQUEST = """<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/s
 </soap:Body>
 </soap:Envelope>"""
 
-
+#Запрос на установку параметра к зукиперу
 SET_ZOOKEEPER_REQUEST = """<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ru="ru.emias.simi.v2.api.diagnostic.v1">
 <soapenv:Header/>
     <soapenv:Body>

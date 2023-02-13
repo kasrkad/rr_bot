@@ -17,6 +17,14 @@ hpsm_logger = create_logger(__name__)
 class Hpsm_checker(Thread):
 
     def __init__(self,bot_token:str, rr_file_path:str, request_codes_file_path:str,control_queue, *args, **kwargs) -> None:
+        """Класс парсера HPSM для мониторинга состояния заявок и уведомлении о необходимости взять в работу
+
+        Args:
+            bot_token (str): строка с токеном телеграм бота
+            rr_file_path (str): файл с описанием Регламентных работ
+            request_codes_file_path (str): файл с описание кодов регламентных работ
+            control_queue (queue): очередь для взаимодействия с инстансом service bot 
+        """
         super().__init__(*args, **kwargs)
         self.bot_token = bot_token
         self.rr_file_path = rr_file_path
@@ -29,11 +37,18 @@ class Hpsm_checker(Thread):
 
 
     def create_bot(self):
+        """Возвращаем объект бота для работы с уведомлениями о заявках
+
+        Returns:
+            _type_: _description_
+        """
         bot = telebot.TeleBot(self.bot_token, parse_mode='MARKDOWN')
         return bot
 
 
     def start_control_queue(self):
+        """Мониторинг очереди взаимодействия с инстанса сервисобота
+        """
         hpsm_logger.info('Запускаем очередь управления hpsm мониторинга.')
         while True:
             try:
@@ -59,7 +74,16 @@ class Hpsm_checker(Thread):
                 hpsm_logger.error('Ошибка при работе с очередью command = {data}')
 
 
-    def send_notification(self,text,channel=False,duty=False,owner=False,screenshot=False):
+    def send_notification(self,text:str,channel=False,duty=False,owner=False,screenshot=False):
+        """Отправка уведомления
+
+        Args:
+            text (str): Текст для отправки
+            channel (bool, optional): Отправить уведомление в канал ЕСС,линкануть дежурного и координатора. Defaults to False.
+            duty (bool, optional): Отправить только дежурному. Defaults to False.
+            owner (bool, optional): Отправить только координатору. Defaults to False.
+            screenshot (bool, optional): Отправить скриншот дежурному. Defaults to False.
+        """
         hpsm_logger.info('Отправляем уведомление')
         notifi_bot = self.create_bot()
         duty_now = get_owner_or_duty_db(role='duty')
@@ -84,6 +108,11 @@ class Hpsm_checker(Thread):
 
 
     def make_screenshot(self):
+        """Снятие скриншота со страницы с заявками
+
+        Raises:
+            HpsmScreenshotError: Произошла ошибка при снятии скриншота
+        """
         driver = self.create_webdriver()
         driver.get(HPSM_PAGE)
         self.login_hpsm(driver,user=HPSM_SCREENSHOT_USER,password=HPSM_SCREENSHOT_PASSWORD)
@@ -97,7 +126,9 @@ class Hpsm_checker(Thread):
             raise HpsmScreenshotError
        
 
-    def check_tickets_for_notification(self,tickets):
+    def check_tickets_for_notification(self,tickets:dict):
+        """Проверяем заявки на статус , если не в ignore_statuses, и проходит по условями, то отправить уведомление в канал 
+        """
         hpsm_logger.info('проверяем заявки на необходимость уведомления')
         current_hour = datetime.now().strftime("%H")
         current_min = datetime.now().strftime("%M")
@@ -120,6 +151,11 @@ class Hpsm_checker(Thread):
 
 
     def create_webdriver(self):
+        """Создаем объект драйвера для работы с сайтом заявок
+
+        Returns:
+        объект драйвера
+        """
         hpsm_logger.info('Создаем драйвер')
         options = webdriver.FirefoxOptions()
         options.add_argument('--headless')
@@ -129,6 +165,12 @@ class Hpsm_checker(Thread):
 
 
     def check_working_time(self):
+        """Проверка на рабочее время 
+
+        Returns:
+           True: если текущее время - рабочее
+           False: если время не рабочее 
+        """
         work_hours = datetime.now()
         hours = int(work_hours.strftime("%H"))
         week_day =  datetime.today().weekday()
@@ -136,7 +178,7 @@ class Hpsm_checker(Thread):
             return True
         return False
 
-
+#TODO объеденить функции загрузки из файлов с РР
     def load_request_codes_from_file(self):
         with open(self.request_codes_file_path, 'r', encoding='utf8') as request_code_file:
             for line in request_code_file:
@@ -149,7 +191,16 @@ class Hpsm_checker(Thread):
                 self.rr_list.append(line.strip())
 
 
-    def wait_for_frame(self,webdriver,timeout):
+    def wait_for_frame(self,webdriver,timeout:int):
+        """Ожидание загрузки элемента страницы с заявками
+
+        Args:
+            webdriver (obj): Объект драйвера для работы с сайтом
+            timeout (int): кол-во попыток для поиска элемента с заявками (секунды)
+
+        Raises:
+            GetHpsmFrameException: _description_
+        """
         try_counter = 1
         hpsm_logger.info('Делаем паузу для загрузки страницы')
         while try_counter < timeout:
@@ -166,7 +217,7 @@ class Hpsm_checker(Thread):
                 try_counter += 1
                 continue
             else:
-                sleep(3)
+                sleep(10)
                 hpsm_logger.info(f'Количество попыток для получения списка заявок - {try_counter}')
                 break
         else:
@@ -176,7 +227,20 @@ class Hpsm_checker(Thread):
             raise GetHpsmFrameException
 
 
-    def login_hpsm(self, webdriver, user, password):
+    def login_hpsm(self, webdriver, user:str, password:str):
+        """Логинимся в HPSM
+
+        Args:
+            webdriver (obj): 
+            user (str): пользователь для логина 
+            password (str): пароль для пользователя
+
+        Raises:
+            HpsmLoginException: Если не получилось залогиниться
+
+        Returns:
+            Вернуть драйвер с залогиненым сайтом            
+        """
         hpsm_logger.info('Логинимся с учеткой - '+ user)
         try:
             hpsm_logger.info('Добавляем cookie на кол-во строк в странице = 50')
@@ -193,6 +257,17 @@ class Hpsm_checker(Thread):
 
 
     def get_html_page(self, webdriver)-> str:
+        """Парсим страницу с заявками
+
+        Args:
+            webdriver (obj): Вебдрайвер селениума с открытой страницей 
+
+        Raises:
+            GetPageException: Исключение при получении html страницы
+
+        Returns:
+            str: html код страницы с заявками
+        """
         hpsm_logger.info(f'Запрашиваем страницу {HPSM_PAGE}')
         
         try:
@@ -211,7 +286,18 @@ class Hpsm_checker(Thread):
         return hpsm_html
 
     
-    def parse_hpsm_html(self, html_source):
+    def parse_hpsm_html(self, html_source:str)-> list:
+        """Вытаскиваем заявки из общего кода страницы
+
+        Args:
+            html_source (str): html строка с кодом страницы с заявками
+
+        Raises:
+            EmptyRequestsListReturn: исключение если заявки не найдены
+
+        Returns:
+            list: список с dict объектами заявок
+        """
         start_string = 'var listConfig = '
         end_string = 'columns: ['
         tickets_keys = ['record_id','itemType','description','status','group','priority']
@@ -236,7 +322,15 @@ class Hpsm_checker(Thread):
         raise EmptyRequestsListReturn('Вернулся пустой список заявок')
 
 
-    def get_rr_count(self, tickets):
+    def get_rr_count(self, tickets:list)->dict:
+        """Считаем кол-во регламентных работ, и обычных заявок
+
+        Args:
+            tickets (list): Список с заявками 
+
+        Returns:
+            dict: кол-во заявок и рр для базы данных 
+        """
         rr_counter = 0
         for ticket in tickets:
             if ticket['description'] in self.rr_list:
@@ -265,7 +359,7 @@ class Hpsm_checker(Thread):
             except GetHpsmFrameException as exc:
                 hpsm_logger.error('Произошла ошибка при получении заявок с HPSM.')
                 self.count_failed_checks += 1
-                if self.count_failed_checks >= 2:
+                if self.count_failed_checks >= 2 and self.check_working_time():
                     self.send_notification(text=f'Ошибка при получении заявок с HPSM следующая попытка через {HPSM_CHECK_INTERVAL_SECONDS} секунд.', channel=True)
             except EmptyRequestsListReturn as exc:
                 hpsm_logger.warning('Вернулся пустой список задач с HPSM.')
@@ -277,7 +371,7 @@ class Hpsm_checker(Thread):
                 print(exc,exc.args)
                 hpsm_logger.error('Возникло необрабатываемое исключение',exc_info=True)
                 self.count_failed_checks += 1
-                if self.count_failed_checks >= 2:
+                if self.count_failed_checks >= 2 and self.check_working_time():
                     self.send_notification(text=f'Ошибка при получении заявок с HPSM следующая попытка через {HPSM_CHECK_INTERVAL_SECONDS} секунд.', channel=True)
             finally:
                 sleep(HPSM_CHECK_INTERVAL_SECONDS)

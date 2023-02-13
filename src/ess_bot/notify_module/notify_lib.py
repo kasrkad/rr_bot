@@ -10,6 +10,9 @@ notify_logger = create_logger(__name__)
 ESS_CHAT_ID = environ["ESS_CHAT_ID"]
 
 class Notify:
+    """
+    Хранит объект уведомления выгружаемый из БД
+    """
     def __init__(self,id=None,bd_name=None, time=None, work_day=None,text=None, status = 0 , target = "system", active='True'):
         self._id = id
         self._time = time
@@ -22,6 +25,12 @@ class Notify:
 
 
 class Notifyer(threading.Thread):
+    """_summary_
+    Класс уведомителя, получает на вход токен бота через который шлет уведомления
+    выгружает данные с БД и создает объекты уведомлений
+    Args:
+        threading (_type_): _description_
+    """
     def __init__(self,bot_token:str,*args,**kwargs):
         super().__init__(*args, **kwargs)
         self.notifycations = []
@@ -29,6 +38,11 @@ class Notifyer(threading.Thread):
 
 
     def send_notification(self,notify_obj):
+        """Отправка уведомлений из объекта уведомлений
+
+        Args:
+            notify_obj (_type_): _description_
+        """
         notify_logger.info(f'Отправляем уведомление {notify_obj._bd_name}.')
         try:
             bot = telebot.TeleBot(self.bot_token, parse_mode='MARKDOWN')
@@ -46,26 +60,37 @@ class Notifyer(threading.Thread):
 
 
     def check_for_notify(self, obj):
+        """Проверка уведомления на соблюдений условия для отправки
+
+        Args:
+            obj (_type_): _description_
+        """
         from datetime import datetime
         current_hour = datetime.now().strftime("%H")
         current_min = datetime.now().strftime("%M")
         notify_hours, notify_min = obj._time.strip().split('-')
-        
         current_work_day =  datetime.today().weekday()
+
+        notify_logger.info(f'Проверяю условия day {current_work_day} time {current_hour}-{current_min} для name {obj._bd_name} workdays {obj._work_day} time {obj._time} status {obj._status}')
+        
         if '-' in obj._work_day:
             notify_start_day, notify_end_day = obj._work_day.split('-')
             notify_work_days = [day for day in range(int(notify_start_day)-1,int(notify_end_day))]
         else:
             notify_work_days = [int(obj._work_day)-1]
-
-        if current_hour == notify_hours and current_min == notify_min and (obj._status == '0' and obj._active=='True') and (current_work_day in notify_work_days):
+        notify_logger.info(f'Условия для сработки {obj._bd_name} часы {current_hour == notify_hours and current_min == notify_min}, статус и активность {obj._status == "0" and obj._active=="True"}\
+            Текущий день входит в день уведомления {current_work_day in notify_work_days}')
+        if (current_hour == notify_hours and current_min == notify_min) and (obj._status == '0' and obj._active=='True') and (current_work_day in notify_work_days):
             notify_logger.info(f'Условия удовлетворяют для срабатывания уведомления {obj._bd_name}')
             obj._status = '1'
             change_notify_status(obj._bd_name)
             self.send_notification(notify_obj=obj)
 
         if current_hour == '23' and current_min == '00':
+            """Сбрасываем состояния уведомлений, и перечитывает их из бд"""
             midnight_reset_notifications()
+            self.notifycations = []
+            self.load_all_notyfications_from_db()
 
 
     def load_all_notyfications_from_db(self):

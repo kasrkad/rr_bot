@@ -11,6 +11,11 @@ sqlite_logger = create_logger(__name__)
 
 class SQLite:
     def __init__(self, file='./bot_db/botbase.db'):
+        """Открываем соединение до базы данных sqlite3
+
+        Args:
+            file (str, optional): пусть до базы, если ее там не будет, создастся новая. Defaults to './bot_db/botbase.db'.
+        """
         self.file = file
 
     def __enter__(self):
@@ -25,7 +30,16 @@ class SQLite:
         sqlite_logger.info("Соединение с бд закрыто")
 
 
-def insert_admin(tg_id=None, fio=None, phone_num=None, duty='NO' ,owner='NO'):
+def insert_admin(tg_id:str, fio:str, phone_num:str, duty='NO' ,owner='NO')-> None:
+    """Добавляет нового админа к в БД
+
+    Args:
+        tg_id (str): телеграм id пользователя
+        fio (str): Фамилия Имя Отчество
+        phone_num (str): Номер телефона для переключения
+        duty (str, optional): дежурный . Defaults to 'NO'.
+        owner (str, optional): координатор. Defaults to 'NO'.
+    """    
     try:
         sqlite_logger.info(f'Добавляем админа  {tg_id}-{fio}')
         with SQLite() as cursor:
@@ -38,23 +52,33 @@ def insert_admin(tg_id=None, fio=None, phone_num=None, duty='NO' ,owner='NO'):
             f'Произошла ошибка при добавлении администратора {tg_id}-{fio}', exc_info=True)
 
 
-def load_standard_notify_from_file(path_to_file_with_notifycations):
-        import json
-        try:
-            sqlite_logger.info(f'Загружаем базовые уведомления из файла {path_to_file_with_notifycations}')
-            if path_to_file_with_notifycations:
-                with open(path_to_file_with_notifycations, 'r', encoding='utf8') as notify_file:
-                    data_for_db_insert = json.load(notify_file)
-                    for notify in data_for_db_insert['standard_notify']:
-                        insert_nofity(**notify)
-                sqlite_logger.info('Базовые уведомления успешно загружены.')
-                return
-            sqlite_logger.info(f'Не задан файл со стандартными уведомлениями, нечего загружать')
-        except Exception:
-            sqlite_logger.error('Ошибка загрузки стандартных уведомлений', exc_info=True)
+def load_standard_notify_from_file(path_to_file_with_notifycations:str)->None:
+    """_summary_
+
+    Args:
+        path_to_file_with_notifycations (str): путь до файла с json уведомлениями
+    """
+    import json
+    try:
+        sqlite_logger.info(f'Загружаем базовые уведомления из файла {path_to_file_with_notifycations}')
+        if path_to_file_with_notifycations:
+            with open(path_to_file_with_notifycations, 'r', encoding='utf8') as notify_file:
+                data_for_db_insert = json.load(notify_file)
+                for notify in data_for_db_insert['standard_notify']:
+                    insert_nofity(**notify)
+            sqlite_logger.info('Базовые уведомления успешно загружены.')
+            return
+        sqlite_logger.info(f'Не задан файл со стандартными уведомлениями, нечего загружать')
+    except Exception:
+        sqlite_logger.error('Ошибка загрузки стандартных уведомлений', exc_info=True)
 
 
-def load_admin_from_json(path_to_admin_file):
+def load_admin_from_json(path_to_admin_file:str)-> None:
+    """Загружаем администраторов из файла
+
+    Args:
+        path_to_admin_file (str): путь к файлу json с администраторами 
+    """    
     import json
     sqlite_logger.info(f'Загружаем администраторов из файла {path_to_admin_file}')
     try:
@@ -71,6 +95,8 @@ def load_admin_from_json(path_to_admin_file):
 
 
 def create_tables() ->None:
+    """Создаем таблицы в пустой базе
+    """    
     try:
         with SQLite() as cursor:
             cursor.execute(
@@ -91,6 +117,16 @@ def create_tables() ->None:
 
 
 def insert_nofity(bd_name:str, time:str, work_day:str, text:str, target = "system", active='True') -> None:
+    """Добавляем в базу уведомление 
+
+    Args:
+        bd_name (str): Имя уведомелния
+        time (str): время в формете 10-30 (10 часов 30 минут)
+        work_day (str): день в который нужно чтобы срабатывало уведомление, 1 - пнд, 7 - вск. Либо просто день , либо через дефис "1-5 с понедельника по пятницу"
+        text (str): текст уведомления 
+        target (str, optional): цель, system - для всех в канал , user - только для . Defaults to "system".
+        active (str, optional): Активно ли уведомление . Defaults to 'True'.
+    """    
     try:
         sqlite_logger.info(f'Добавляем уведомления с именем {bd_name}')
         with SQLite() as cursor:
@@ -104,7 +140,13 @@ def insert_nofity(bd_name:str, time:str, work_day:str, text:str, target = "syste
         )
 
 
-def set_notify_active(notify_id, active)-> bool:
+def set_notify_active(notify_id:int, active:bool)-> None:
+    """Меняем акивность уведомления активно для работы, или не активно 
+
+    Args:
+        notify_id (int): id уведомленя в базе
+        active (bool): Активно или нет, true = активно
+    """
     try:
         with SQLite() as cursor:
             sqlite_logger.info(
@@ -112,14 +154,20 @@ def set_notify_active(notify_id, active)-> bool:
             cursor.execute(f"""UPDATE SYSTEM_NOTIFY SET ACTIVE = '{active}' where id = '{notify_id}';""")
             sqlite_logger.info(
                 f'Статус успешно уведомления c id = {notify_id} на {active} успешно изменен.')
-        return True
     except Exception:
         sqlite_logger.error(f"Возникла ошибка при запросе уведомлений.",
                             exc_info=True)
-        return False
 
 
 def get_all_notifys()-> list :
+    """Возвращает все уведомления в базе
+
+    Raises:
+        ValueError: Если список пуст
+
+    Returns:
+        list: список уведомлений
+    """    
     try:
         with SQLite() as cursor:
             sqlite_logger.info(
@@ -136,7 +184,12 @@ def get_all_notifys()-> list :
         raise
 
 
-def change_notify_status(notify_name):
+def change_notify_status(notify_name:str)-> None:
+    """Меняем статус уведомления, 1 = сегодня уведомление уже произошло
+
+    Args:
+        notify_name (str): имя уведомления
+    """    
     try:
         with SQLite() as cursor:
             sqlite_logger.info(
@@ -144,14 +197,17 @@ def change_notify_status(notify_name):
             cursor.execute(f"""UPDATE SYSTEM_NOTIFY SET STATUS = '1' WHERE NOTIFY_NAME = '{notify_name}';""")
             sqlite_logger.info(
                 f'Статус {notify_name} успешно изменен.')
-        return True
     except Exception:
         sqlite_logger.error(f"Изменении стауста {notify_name} закончилось ошибкой.",
                             exc_info=True)
-        return False
 
 
-def midnight_reset_notifications()-> bool:
+def midnight_reset_notifications()-> None:
+    """Сбрасываем статус уведомлений ночью, чтобы отработали на след день
+
+    Returns:
+        bool: _description_
+    """    
     try:
         with SQLite() as cursor:
             sqlite_logger.info(
@@ -159,14 +215,22 @@ def midnight_reset_notifications()-> bool:
             cursor.execute(f"""UPDATE SYSTEM_NOTIFY SET STATUS = '0';""")
             sqlite_logger.info(
                 f'Статусы сброшены.')
-        return True
     except Exception:
         sqlite_logger.error(f"Во время сброса статусов произошла ошибка.",
                             exc_info=True)
-        return False
 
 
-def add_admin_user_db(tg_id=None, user_fio=None, user_phone=None) -> bool:
+def add_admin_user_db(tg_id=None, user_fio=None, user_phone=None) -> True:
+    """Добавить администратора в бд
+
+    Args:
+        tg_id (str, optional): телеграм id нового пользователя. Defaults to None.
+        user_fio (str, optional): фио администратора . Defaults to None.
+        user_phone (str, optional): телефон для перевода деружного номера. Defaults to None.
+
+    Returns:
+        None
+    """    
     try:
         with SQLite() as cursor:
             sqlite_logger.info(
@@ -175,18 +239,26 @@ def add_admin_user_db(tg_id=None, user_fio=None, user_phone=None) -> bool:
                 tg_id=tg_id, fio=user_fio, phone=user_phone))
             sqlite_logger.info(
                 f'Пользователь добавлен id = {tg_id}, fio = {user_fio}, phone = {user_phone}')
-        return True
     except sqlite3.IntegrityError as exc:
         sqlite_logger.error(f"Не могу добавить пользователя, значение {exc.args[0].split(':')[1].split('.')[1]} не уникально",
                             exc_info=True)
-        return False
     except Exception:
         sqlite_logger.error(
             "Произошла ошибка при добавлении пользователя", exc_info=True)
-    return False
 
 
-def return_phone_num_db(tg_id_for_get_phone)-> str:
+def return_phone_num_db(tg_id_for_get_phone:str)-> str:
+    """Достаем телефон из бд
+
+    Args:
+        tg_id_for_get_phone (str): id инженера 
+
+    Raises:
+        ValueError: вернулся пустой телефон
+
+    Returns:
+        str: номер телефона из бд
+    """    
     try:
         with SQLite() as cursor:
             sqlite_logger.info(f"Запрошен телефон для пользователя {tg_id_for_get_phone}")
