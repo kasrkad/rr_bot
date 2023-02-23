@@ -51,37 +51,37 @@ class Hpsm_checker(Thread):
         while True:
             try:
                 data = self.control_queue.get()
-                hpsm_logger.info(f'получено сообщение в очередь {data}')
+                hpsm_logger.warn(f'получено сообщение в очередь {data}')
                 if data is None:
                     break
-                if data[1] == 'notification_status':
-                    hpsm_logger.info(
+                elif data[1] == 'hpsm_notify_status':
+                    hpsm_logger.warn(
                         "Запрошен статус уведомлений от HPSM CHECKER")
                     self.send_notification(
-                        text=f"Статус уведомлений от HPSM_CHECKER {self.send_notifi_flag}", channel=True)
-                if data[1] == 'notification_off':
-                    hpsm_logger.info('Уведомления HPSM отключены от {data[0]}')
+                        text=f"Статус уведомлений от HPSM {self.send_notifi_flag}", status=True)
+                elif data[1] == 'hpsm_notify_off':
+                    hpsm_logger.warn(f'Уведомления HPSM отключены от{data[0]}')
                     self.send_notification(
                         text='Уведомления о заявках отключены.', channel=True)
                     self.send_notifi_flag = False
-                if data[1] == 'notification_on':
-                    hpsm_logger.info('Уведомления HPSM включены от {data[0]}')
+                elif data[1] == 'hpsm_notify_on':
+                    hpsm_logger.warn(f'Уведомления HPSM включены от {data[0]}')
                     self.send_notifi_flag = True
                     self.send_notification(
                         text='Уведомления о заявках включены', channel=True)
-                if data[1] == 'screenshot':
+                elif data[1] == 'screenshot':
                     hpsm_logger.info(
                         'В очереди пришла команда на снятие скриншота')
                     self.make_screenshot()
                     self.send_notification(
                         text='Проверьте скриншот, для отправки нажмите на /send', screenshot=True)
                 else:
-                    print(f'неизвестный параметр {data[1]} от {data[0]}')
+                    hpsm_logger.error(f'Неизвестный параметр {data[1]} от {data[0]}')
             except Exception:
                 hpsm_logger.error(
-                    'Ошибка при работе с очередью command = {data}')
+                    f'Ошибка при работе с очередью command = {data}')
 
-    def send_notification(self, text: str, channel=False, duty=False, owner=False, screenshot=False):
+    def send_notification(self, text: str, channel=False, duty=False, owner=False, screenshot=False, status=False):
         """Отправка уведомления
 
         Args:
@@ -97,6 +97,8 @@ class Hpsm_checker(Thread):
         owner_now = get_owner_or_duty_db(role='owner')
         keyboard = None
         try:
+            if status :
+                notifi_bot.send_message(ESS_CHAT_ID,text)
             if screenshot:
                 hpsm_logger.info(f'Отправляем скриншот для {str(duty_now)}')
                 notifi_bot.send_message(duty_now['tg_id'], text)
@@ -151,7 +153,7 @@ class Hpsm_checker(Thread):
 
         for ticket in tickets:
             if self.check_working_time() and ticket['status'] not in ignore_statuses and not(ticket['record_id'].startswith('C') or ticket['record_id'].startswith('T')):
-                hpsm_logger.info(
+                hpsm_logger.warn(
                     f'Отправляем уведомление по заявке {ticket["record_id"]}')
                 self.send_notification(text=message_for_get_request.format(ticket_id=ticket['record_id']), channel=True,
                                        owner=True, duty=True)

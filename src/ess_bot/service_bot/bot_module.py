@@ -12,7 +12,7 @@ from .service_config import ESS_CHAT_ID, PPAK_STANDBY_CONNECTION_STRING,\
 from ..email_sender.send_email import send_email_with_screenshot
 from ..simi_requests_module.bot_soap_requests import REQUEST_FOR_PRODUCER_RELOAD,\
     REQUEST_BASE64_TO_JSON_CONVERT, SIMI_GET_DOC_REQUEST
-from ..simi_requests_module import producer_recreate,\
+from ..simi_requests_module.request_to_simi import producer_recreate_request,\
     simi_document_request, write_json_or_xml_document, base64_decode_to_json
 from ..oracle_module import oracle_lib
 from ..logger_config.logger_data import create_logger
@@ -35,13 +35,14 @@ class Ess_service_bot:
         self.hpsm_control_queue = hpsm_control_queue
         self.document_regexp = r"[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}"
         self.main_menu_call_data = ['contacts', 'help', 'admin_menu']
-        self.admin_menu_call_data = ['hpsm_notify_off', 'hpsm_notify_on', 'hpsm_notify_status'
-                                     'producer', 'set_owner_manual', 'screenshot',
+        self.admin_menu_call_data = ['producer', 'set_owner_manual', 'screenshot',
                                      'duty', 'notify_get', 'notify_set_active',
                                      'status_hpsm', 'set_duty_manual', 'show_hpsm_panel']
         self.documents_call_data = ['download_doc_test', 'download_json_test', 'audit_test',
                                     'status_test', 'download_doc_ppak', 'download_json_ppak',
                                     'audit_ppak', 'status_ppak']
+
+        self.hpsm_menu_call_data = ['hpsm_notify_off', 'hpsm_notify_on', 'hpsm_notify_status']
 
     def permissions_decorator(self, func_for_decorate):
         """Проверка аккаунта вызывающего команду, на наличие доступа к ней.
@@ -215,12 +216,12 @@ class Ess_service_bot:
 
         @self.bot.message_handler(commands=['producer'])
         @self.permissions_decorator
-        def producer_recreate_request(message):
+        def producer_recreate(message):
             service_bot_logger.info(f'Запрошено пересоздание продьюсера')
             try:
                 self.bot.send_message(
                     message.from_user.id, 'Запущено пересоздание продюсера.')
-                reload_result = producer_recreate(REQUEST_FOR_PRODUCER_RELOAD)
+                reload_result = producer_recreate_request(REQUEST_FOR_PRODUCER_RELOAD)
                 self.bot.send_message(message.from_user.id, 'Пересоздание завершено.Результаты:' +
                                       "\n".join(f'{node}:{result}' for node, result in reload_result.values()))
 
@@ -457,6 +458,38 @@ class Ess_service_bot:
                 self.bot.send_message(
                     call.from_user.id, 'Во время операции произошла ошибка', reply_markup=keyboards.main_menu_keyboard)
 
+        @self.bot.callback_query_handler(func=lambda call: call.data in self.hpsm_menu_call_data)
+        def callback_inline(call):
+            try:
+                print(call.data)
+                if call.data == 'hpsm_notify_off':
+                    self.bot.send_message(
+                        call.from_user.id, 'Отключаем уведомления от HPSM')
+                    service_bot_logger.warn(
+                        f'Пользователем {call.from_user.id} запрошено отключение уведомлений')
+                    self.hpsm_control_queue.put(
+                        (call.from_user.id, 'hpsm_notify_off'))
+                if call.data == 'hpsm_notify_on':
+                    self.bot.send_message(
+                        call.from_user.id, 'Включаем уведомления от HPSM')
+                    service_bot_logger.warn(
+                        f'Пользователем {call.from_user.id} запрошено включение уведомлений')
+                    self.hpsm_control_queue.put(
+                        (call.from_user.id, 'hpsm_notify_on'))
+                if call.data == 'hpsm_notify_status':
+                    self.bot.send_message(
+                        call.from_user.id, 'Запрашиваем статус')
+                    service_bot_logger.warn(
+                        f'Пользователем {call.from_user.id} запрошен статус уведомлений')
+                    self.hpsm_control_queue.put(
+                        (call.from_user.id, 'hpsm_notify_status'))
+
+            except Exception:
+                service_bot_logger.error(
+                    'Во время операции произошла ошибка', exc_info=True)
+                self.bot.send_message(
+                    call.from_user.id, 'Во время операции произошла ошибка.', reply_markup=keyboards.hpsm_checker_keyboard)
+
         @self.bot.callback_query_handler(func=lambda call: call.data in self.admin_menu_call_data)
         def callback_inline(call):
             try:
@@ -467,7 +500,7 @@ class Ess_service_bot:
                 if call.data == 'duty':
                     reqister_duty_engeneer(call)
                 if call.data == 'producer':
-                    producer_recreate_request(call)
+                    producer_recreate(call)
                 if call.data == 'notify_set_active':
                     change_notify_status_dialogue(call)
                 if call.data == 'status_hpsm':
@@ -479,27 +512,7 @@ class Ess_service_bot:
                         'Запрошен скриншот у HPSM парсера.')
                     self.hpsm_control_queue.put(
                         (call.from_user.id, 'screenshot'))
-                if call.data == 'hpsm_notify_off':
-                    self.bot.send_message(
-                        call.from_user.id, 'Отключаем уведомления от HPSM')
-                    service_bot_logger.warn(
-                        f'Пользователем {call.from_user.id} запрошено отключение уведомлений')
-                    self.hpsm_control_queue.put(
-                        (call.from_user.id, 'notification_off'))
-                if call.data == 'hpsm_notify_on':
-                    self.bot.send_message(
-                        call.from_user.id, 'Отключаем уведомления от HPSM')
-                    service_bot_logger.warn(
-                        f'Пользователем {call.from_user.id} запрошено включение уведомлений')
-                    self.hpsm_control_queue.put(
-                        (call.from_user.id, 'notification_on'))
-                if call.data == 'hpsm_notify_status':
-                    self.bot.send_message(
-                        call.from_user.id, 'Отключаем уведомления от HPSM')
-                    service_bot_logger.warn(
-                        f'Пользователем {call.from_user.id} запрошен статус уведомлений')
-                    self.hpsm_control_queue.put(
-                        (call.from_user.id, 'notification_status'))
+                
                 if call.data == 'set_duty_manual':
                     set_duty_dialogue(call)
                 if call.data == 'notify_get':
@@ -516,7 +529,7 @@ class Ess_service_bot:
             try:
                 service_bot_logger.info('Запускаем бота')
                 self.bot_commads()
-                self.bot.send_message(ESS_CHAT_ID, 'Сервис бот запущен')
+                # self.bot.send_message(ESS_CHAT_ID, 'Сервис бот запущен')
                 self.bot.polling(none_stop=True, interval=0, timeout=20)
             except Exception:
                 # При получении исключения, делаем паузу при работе в 30 секунд
