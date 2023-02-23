@@ -1,7 +1,5 @@
 from os import environ
 
-from ess_bot.hpsm_module.hpsm_config import ESS_CHAT_ID
-
 ESS_CHAT_ID = environ["ESS_CHAT_ID"]
 PPAK_STANDBY_CONNECTION_STRING = environ["PPAK_STANDBY_CONNECTION_STRING"]
 DEFAULT_ORACLE_USER = environ["DEFAULT_ORACLE_USER"]
