@@ -6,8 +6,11 @@ import telebot
 from selenium import webdriver
 from ..logger_config.logger_data import create_logger
 from ..sqlite_module.sql_lib import get_owner_or_duty_db, write_hpsm_status_db
-from ..bot_exceptions.hpsm_exceptions import *
-from .hpsm_config import *
+from ..bot_exceptions.hpsm_exceptions import GetHpsmFrameException,\
+    GetPageException, HpsmLoginException, EmptyRequestsListReturn, HpsmScreenshotError
+from .hpsm_config import HPSM_PAGE, HPSM_EXIT_PAGE, HPSM_USER,\
+    HPSM_PASS, HPSM_SCREENSHOT_USER, HPSM_SCREENSHOT_PASSWORD,\
+    HPSM_CHECK_INTERVAL_SECONDS, ESS_CHAT_ID, HPSM_WAIT_FRAME_TRIES
 
 
 # configure logger
@@ -16,7 +19,8 @@ hpsm_logger = create_logger(__name__)
 
 class Hpsm_checker(Thread):
 
-    def __init__(self, bot_token: str, rr_file_path: str, request_codes_file_path: str, control_queue, *args, **kwargs) -> None:
+    def __init__(self, bot_token: str, rr_file_path: str, request_codes_file_path: str,
+                 control_queue, *args, **kwargs) -> None:
         """Класс парсера HPSM для мониторинга состояния заявок и уведомлении о необходимости взять в работу
 
         Args:
@@ -62,13 +66,13 @@ class Hpsm_checker(Thread):
                 elif data[1] == 'hpsm_notify_off':
                     hpsm_logger.warn(f'Уведомления HPSM отключены от{data[0]}')
                     self.send_notification(
-                        text='Уведомления о заявках отключены.', channel=True)
+                        text='Уведомления о заявках отключены.', status=True)
                     self.send_notifi_flag = False
                 elif data[1] == 'hpsm_notify_on':
                     hpsm_logger.warn(f'Уведомления HPSM включены от {data[0]}')
                     self.send_notifi_flag = True
                     self.send_notification(
-                        text='Уведомления о заявках включены', channel=True)
+                        text='Уведомления о заявках включены', status=True)
                 elif data[1] == 'screenshot':
                     hpsm_logger.info(
                         'В очереди пришла команда на снятие скриншота')
@@ -76,12 +80,14 @@ class Hpsm_checker(Thread):
                     self.send_notification(
                         text='Проверьте скриншот, для отправки нажмите на /send', screenshot=True)
                 else:
-                    hpsm_logger.error(f'Неизвестный параметр {data[1]} от {data[0]}')
+                    hpsm_logger.error(
+                        f'Неизвестный параметр {data[1]} от {data[0]}')
             except Exception:
                 hpsm_logger.error(
                     f'Ошибка при работе с очередью command = {data}')
 
-    def send_notification(self, text: str, channel=False, duty=False, owner=False, screenshot=False, status=False):
+    def send_notification(self, text: str, channel=False, duty=False,
+                          owner=False, screenshot=False, status=False):
         """Отправка уведомления
 
         Args:
@@ -97,8 +103,8 @@ class Hpsm_checker(Thread):
         owner_now = get_owner_or_duty_db(role='owner')
         keyboard = None
         try:
-            if status :
-                notifi_bot.send_message(ESS_CHAT_ID,text)
+            if status:
+                notifi_bot.send_message(ESS_CHAT_ID, text)
             if screenshot:
                 hpsm_logger.info(f'Отправляем скриншот для {str(duty_now)}')
                 notifi_bot.send_message(duty_now['tg_id'], text)
@@ -108,7 +114,8 @@ class Hpsm_checker(Thread):
                 hpsm_logger.info('Скриншот отправлен.')
             if channel and self.send_notifi_flag:
                 notifi_bot.send_message(
-                    ESS_CHAT_ID, text+f"\n[{duty_now['fio']}](tg://user?id={duty_now['tg_id']})\n[{owner_now['fio']}](tg://user?id={owner_now['tg_id']})")
+                    ESS_CHAT_ID, text +
+                    f"\n[{duty_now['fio']}](tg://user?id={duty_now['tg_id']})\n[{owner_now['fio']}](tg://user?id={owner_now['tg_id']})")
             if duty and self.send_notifi_flag:
                 notifi_bot.send_message(
                     duty_now['tg_id'], text, reply_markup=keyboard)
@@ -146,17 +153,22 @@ class Hpsm_checker(Thread):
         current_min = datetime.now().strftime("%M")
         ignore_statuses = ['В работе', 'Отложен',
                            'Ожидание', 'Подготовка Отчета']
-        message_for_get_request = """Заявка [{ticket_id}](https://hpsm.emias.mos.ru/sm/index.do?lang=) не взята в работу!"""
+        message_for_get_request = """Заявки [{ticket_id}](https://hpsm.emias.mos.ru/sm/index.do?lang=)\nне взяты в работу!"""
         message_with_rr_count = """В работе осталось {rr_count} не закрытых РР!"""
         hpsm_logger.info(
             f'Проверяем заявки на соответствие времени уведомлений {current_hour} : {current_min}.')
-
+        tickets_for_notifi = []
         for ticket in tickets:
             if self.check_working_time() and ticket['status'] not in ignore_statuses and not(ticket['record_id'].startswith('C') or ticket['record_id'].startswith('T')):
-                hpsm_logger.warn(
-                    f'Отправляем уведомление по заявке {ticket["record_id"]}')
-                self.send_notification(text=message_for_get_request.format(ticket_id=ticket['record_id']), channel=True,
-                                       owner=True, duty=True)
+                tickets_for_notifi.append(ticket["record_id"])
+
+        if tickets_for_notifi:
+            hpsm_logger.warn(
+                f'Отправляем уведомление по заявкам {tickets_for_notifi}')
+            self.send_notification(text=message_for_get_request.format(ticket_id=",".join(ticket for ticket in tickets_for_notifi)),
+                                   channel=True,
+                                   owner=True, duty=True)
+
         rr_counter = self.get_rr_count(tickets=tickets)['rr_task_count']
         hpsm_logger.info(f'Кол-во РР = {rr_counter} сработка условий - ' + str(int(
             current_hour) == 17 and int(current_min) > 30 and rr_counter != 0 and self.check_working_time()))
