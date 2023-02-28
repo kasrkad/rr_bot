@@ -62,17 +62,17 @@ class Hpsm_checker(Thread):
                     hpsm_logger.warn(
                         "Запрошен статус уведомлений от HPSM CHECKER")
                     self.send_notification(
-                        text=f"Статус уведомлений от HPSM {self.send_notifi_flag}", status=True)
+                        text=f"Статус уведомлений от HPSM включены : {self.send_notifi_flag}", status=True)
                 elif data[1] == 'hpsm_notify_off':
-                    hpsm_logger.warn(f'Уведомления HPSM отключены от{data[0]}')
+                    hpsm_logger.warn(f'Уведомления HPSM отключены от {data[0]}')
                     self.send_notification(
-                        text='Уведомления о заявках отключены.', status=True)
+                        text='Уведомления о заявках в HPSM отключены.', status=True)
                     self.send_notifi_flag = False
                 elif data[1] == 'hpsm_notify_on':
                     hpsm_logger.warn(f'Уведомления HPSM включены от {data[0]}')
                     self.send_notifi_flag = True
                     self.send_notification(
-                        text='Уведомления о заявках включены', status=True)
+                        text='Уведомления о заявках в HPSM включены', status=True)
                 elif data[1] == 'screenshot':
                     hpsm_logger.info(
                         'В очереди пришла команда на снятие скриншота')
@@ -165,7 +165,7 @@ class Hpsm_checker(Thread):
         if tickets_for_notifi:
             hpsm_logger.warn(
                 f'Отправляем уведомление по заявкам {tickets_for_notifi}')
-            self.send_notification(text=message_for_get_request.format(ticket_id=",".join(ticket for ticket in tickets_for_notifi)),
+            self.send_notification(text=message_for_get_request.format(ticket_id=", ".join(ticket for ticket in tickets_for_notifi)),
                                    channel=True,
                                    owner=True, duty=True)
 
