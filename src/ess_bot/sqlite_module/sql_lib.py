@@ -328,10 +328,11 @@ def get_owner_or_duty_db(role='duty') -> dict :
             query_result = cursor.execute(f"SELECT tg_id, fio from ADMIN_USERS where {role}='YES'").fetchone()
             if query_result:
                 return {"tg_id":query_result[0],"fio":query_result[1]}
-            raise ValueError('Вернулся пустой ответ от БД')
+            else:
+                sqlite_logger.warn(f'Вернулся пустой ответ от БД при запросе {role}')
+                return {"tg_id":00000,"fio":"Not found"}       
     except Exception:
         sqlite_logger.error(f"Произошла ошибка при запросе {role} из БД")
-        raise
 
 def write_hpsm_status_db(task_count = 0, rr_task_count = 0) -> bool:
     try:
