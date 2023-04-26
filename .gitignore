@@ -12,3 +12,6 @@ notifys.json
 test.py
 admins.json
 *.db
+env_file
+env_file_copy
+env_file_main
